@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">PulseGrab</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_detected">Detected</string>
+    <string name="nav_downloads">Downloads</string>
+    <string name="url_input_placeholder">Enter webpage URL or pattern (e.g. site.com/page-[1-5])</string>
+    <string name="action_paste">Paste</string>
+    <string name="action_open_browser">Open</string>
+    <string name="action_deep_scan">Deep Scan</string>
+    <string name="action_extension_rules">Extensions</string>
+    <string name="section_quick_access">Quick Media Access</string>
+    <string name="section_quick_portals">Open Media Portals</string>
+    <string name="section_recent_downloads">Recent Downloads</string>
+    <string name="filter_all_media">All Media</string>
+    <string name="filter_images">Images</string>
+    <string name="filter_videos">Videos</string>
+    <string name="action_select_all">Select All</string>
+    <string name="action_deselect_all">Deselect</string>
+    <string name="action_bulk_download">Download Selected</string>
+    <string name="toggle_skip_duplicates">Skip duplicate URLs</string>
+    <string name="empty_detected_title">No Media Detected Yet</string>
+    <string name="empty_detected_subtitle">Open a webpage in the built-in browser or run a Deep Domain/Pattern Scan to detect images and videos.</string>
+    <string name="empty_downloads_title">No Downloads Yet</string>
+    <string name="empty_downloads_subtitle">Select detected images or videos and tap Download to save them to your device.</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Resume</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_open_file">Open</string>
+    <string name="action_share_file">Share</string>
+    <string name="action_delete_task">Remove</string>
+</resources>

@@ -1,0 +1,6 @@
+{
+  "name": "PulseGrab",
+  "description": "Smart web media detector, multi-level domain scanner, and bulk downloader for images and videos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
