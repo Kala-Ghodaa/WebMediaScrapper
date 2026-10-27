@@ -1,0 +1,4 @@
+interface:
+  display_name: "PulseGrab Tester"
+  short_description: "Run Android media regression and UI verification"
+  default_prompt: "Use $pulsegrab-tester to validate PulseGrab with project checks and report tested behavior and device-only gaps."

@@ -93,14 +93,10 @@ import com.example.ui.components.GlassPill
 import com.example.ui.components.TelegramMediaShareHelper
 import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.CoralError
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.GlassBorderLight
-import com.example.ui.theme.GlassSurfaceWhite
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VividViolet
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DownloadsScreen(
     uiState: MainUiState,
@@ -172,9 +168,9 @@ fun DownloadsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "PulseGrab Downloads",
+                            text = "Downloads",
                             style = MaterialTheme.typography.titleLarge,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
@@ -185,13 +181,13 @@ fun DownloadsScreen(
                         // Live Transfer Speed Glass Pill (Tabular numerals prevent width jitter)
                         GlassPill(
                             selected = uiState.totalDownloadSpeed > 0,
-                            accentColor = ElectricCyan,
+                            accentColor = MaterialTheme.colorScheme.primary,
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Speed,
                                 contentDescription = "Transfer Speed",
-                                tint = ElectricCyan,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(5.dp))
@@ -201,21 +197,20 @@ fun DownloadsScreen(
                                     fontFeatureSettings = "tnum"
                                 ),
                                 fontWeight = FontWeight.SemiBold,
-                                color = ElectricCyan
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
 
                     // Tier 2: Destination Folder Path + Global Toolbar Icon Actions
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .weight(1f)
+                                .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable { onOpenFolderSheet() }
                                 .padding(vertical = 4.dp, horizontal = 4.dp)
@@ -228,7 +223,7 @@ fun DownloadsScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Download/PulseGrab/${uiState.folderConfig.activeSubfolderName} (Unified Folder)",
+                                text = uiState.folderConfig.displayLabel,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = EmeraldSuccess,
                                 maxLines = 1,
@@ -236,9 +231,10 @@ fun DownloadsScreen(
                             )
                         }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             // Diagnostic Logs Button
                             IconButton(
@@ -251,7 +247,7 @@ fun DownloadsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Description,
                                     contentDescription = "Diagnostic Logs",
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -313,7 +309,7 @@ fun DownloadsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Language,
                                     contentDescription = "Open Browser",
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(19.dp)
                                 )
                             }
@@ -346,7 +342,7 @@ fun DownloadsScreen(
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = "Check & Re-download Missing Files from Disk",
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(19.dp)
                                     )
                                 }
@@ -363,7 +359,7 @@ fun DownloadsScreen(
                                     Icon(
                                         imageVector = Icons.Default.CleaningServices,
                                         contentDescription = "Clear completed downloads",
-                                        tint = TextSecondary,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(19.dp)
                                     )
                                 }
@@ -380,14 +376,14 @@ fun DownloadsScreen(
                                 Text(
                                     text = "Search folders, #hashtag, filenames, or album links…",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Search,
                                     contentDescription = "Search Downloads",
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             },
@@ -400,7 +396,7 @@ fun DownloadsScreen(
                                         Icon(
                                             imageVector = Icons.Default.Clear,
                                             contentDescription = "Clear Search",
-                                            tint = TextSecondary,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -408,12 +404,12 @@ fun DownloadsScreen(
                             },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
-                            textStyle = MaterialTheme.typography.bodySmall.copy(color = TextPrimary),
+                            textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ElectricCyan,
-                                unfocusedBorderColor = GlassBorderLight,
-                                focusedContainerColor = GlassSurfaceWhite,
-                                unfocusedContainerColor = GlassSurfaceWhite
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -429,8 +425,8 @@ fun DownloadsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         val tabs: List<Triple<String, DownloadStatus?, Color>> = listOf(
-                            Triple("ALL (${uiState.downloadTasks.size})", null, ElectricCyan),
-                            Triple("DOWNLOADING ($downloadingCount)", DownloadStatus.DOWNLOADING, ElectricCyan),
+                            Triple("ALL (${uiState.downloadTasks.size})", null, MaterialTheme.colorScheme.primary),
+                            Triple("DOWNLOADING ($downloadingCount)", DownloadStatus.DOWNLOADING, MaterialTheme.colorScheme.primary),
                             Triple("PAUSED ($pausedCount)", DownloadStatus.PAUSED, AmberWarning),
                             Triple("FINISHED ($finishedCount)", DownloadStatus.COMPLETED, EmeraldSuccess),
                             Triple("ERROR ($errorCount)", DownloadStatus.FAILED, CoralError)
@@ -451,7 +447,7 @@ fun DownloadsScreen(
                                         fontFeatureSettings = "tnum"
                                     ),
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (selected) accent else TextSecondary
+                                    color = if (selected) accent else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -507,7 +503,7 @@ fun DownloadsScreen(
                                     )
                                     Spacer(modifier = Modifier.width(5.dp))
                                     Text(
-                                        text = "Sync Albums to Telegram Gallery",
+                                        text = "Refresh file index",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = EmeraldSuccess
@@ -518,7 +514,7 @@ fun DownloadsScreen(
                             if (errorCount > 0) {
                                 GlassPill(
                                     selected = true,
-                                    accentColor = ElectricCyan,
+                                    accentColor = MaterialTheme.colorScheme.primary,
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
                                     onClick = onSmartRedownloadFailed,
                                     modifier = Modifier.testTag("smart_redownload_failed_pill")
@@ -526,7 +522,7 @@ fun DownloadsScreen(
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = null,
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(5.dp))
@@ -534,7 +530,7 @@ fun DownloadsScreen(
                                         text = "Smart Re-Download Failed ($errorCount)",
                                         style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                                         fontWeight = FontWeight.Bold,
-                                        color = ElectricCyan
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
@@ -585,7 +581,7 @@ fun DownloadsScreen(
 
                             GlassPill(
                                 selected = false,
-                                accentColor = ElectricCyan,
+                                accentColor = MaterialTheme.colorScheme.primary,
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
                                 onClick = onMergeExistingFolders,
                                 modifier = Modifier.testTag("merge_existing_folders_pill")
@@ -593,7 +589,7 @@ fun DownloadsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Folder,
                                     contentDescription = null,
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(5.dp))
@@ -601,7 +597,7 @@ fun DownloadsScreen(
                                     text = "Merge Pics & Videos Folders",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = ElectricCyan
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
 
@@ -655,7 +651,7 @@ fun DownloadsScreen(
                             if (errorCount + pausedCount > 0) {
                                 GlassPill(
                                     selected = false,
-                                    accentColor = ElectricCyan,
+                                    accentColor = MaterialTheme.colorScheme.primary,
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
                                     onClick = onRetryAllUnfinished,
                                     modifier = Modifier.testTag("retry_all_unfinished_pill")
@@ -663,14 +659,14 @@ fun DownloadsScreen(
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = null,
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(5.dp))
                                     Text(
                                         text = "Retry All (${errorCount + pausedCount})",
                                         style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
-                                        color = ElectricCyan
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
@@ -692,7 +688,7 @@ fun DownloadsScreen(
 
                             GlassPill(
                                 selected = false,
-                                accentColor = TextSecondary,
+                                accentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
                                 onClick = onClearAllDownloads,
                                 modifier = Modifier.testTag("wipe_all_downloads_pill")
@@ -700,7 +696,7 @@ fun DownloadsScreen(
                                 Text(
                                     text = "Wipe All (${uiState.downloadTasks.size})",
                                     style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
-                                    color = TextSecondary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -730,13 +726,13 @@ fun DownloadsScreen(
                                 modifier = Modifier
                                     .size(64.dp)
                                     .clip(CircleShape)
-                                    .background(ElectricCyan.copy(alpha = 0.14f)),
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Downloading,
                                     contentDescription = null,
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(32.dp)
                                 )
                             }
@@ -748,13 +744,13 @@ fun DownloadsScreen(
                             Text(
                                 text = "Select detected images or videos and tap Download to stream them with pause, resume, and auto-recovery support.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Button(
                                 onClick = onExploreDetectedMedia,
-                                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             ) {
                                 Text(
                                     text = "Browse Detected Media",
@@ -790,7 +786,7 @@ fun DownloadsScreen(
                     if (matchingSavedAlbums.isNotEmpty()) {
                         item(key = "saved_album_history_section") {
                             Surface(
-                                color = GlassSurfaceWhite,
+                                color = MaterialTheme.colorScheme.surfaceContainer,
                                 shape = RoundedCornerShape(14.dp),
                                 border = BorderStroke(1.dp, VividViolet.copy(alpha = 0.5f)),
                                 modifier = Modifier
@@ -830,12 +826,12 @@ fun DownloadsScreen(
                                                     text = "Saved Album History & Links (${matchingSavedAlbums.size})",
                                                     style = MaterialTheme.typography.titleSmall,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = TextPrimary
+                                                    color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Text(
                                                     text = "Permanent album link history — tap Re-Download if any folder or files are missing",
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = TextSecondary
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
                                         }
@@ -846,7 +842,7 @@ fun DownloadsScreen(
                                                 Icons.Default.ExpandMore
                                             },
                                             contentDescription = "Toggle Saved Album History",
-                                            tint = TextSecondary
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
 
@@ -856,7 +852,7 @@ fun DownloadsScreen(
                                                 Surface(
                                                     color = Color.Black.copy(alpha = 0.24f),
                                                     shape = RoundedCornerShape(10.dp),
-                                                    border = BorderStroke(1.dp, GlassBorderLight),
+                                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                                     modifier = Modifier.fillMaxWidth()
                                                 ) {
                                                     Column(
@@ -882,14 +878,14 @@ fun DownloadsScreen(
                                                             Text(
                                                                 text = TelegramMediaShareHelper.buildHashtag(album.folderName),
                                                                 style = MaterialTheme.typography.labelSmall,
-                                                                color = ElectricCyan
+                                                                color = MaterialTheme.colorScheme.primary
                                                             )
                                                         }
                                                         if (album.albumUrl.isNotBlank()) {
                                                             Text(
                                                                 text = "🔗 ${album.albumUrl}",
                                                                 style = MaterialTheme.typography.labelSmall,
-                                                                color = ElectricCyan,
+                                                                color = MaterialTheme.colorScheme.primary,
                                                                 maxLines = 1,
                                                                 overflow = TextOverflow.Ellipsis
                                                             )
@@ -900,7 +896,7 @@ fun DownloadsScreen(
                                                         ) {
                                                             GlassPill(
                                                                 selected = true,
-                                                                accentColor = ElectricCyan,
+                                                                accentColor = MaterialTheme.colorScheme.primary,
                                                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
                                                                 onClick = {
                                                                     onRedownloadAlbumByFolderOrUrl(
@@ -914,7 +910,7 @@ fun DownloadsScreen(
                                                                 Icon(
                                                                     imageVector = Icons.Default.Refresh,
                                                                     contentDescription = null,
-                                                                    tint = ElectricCyan,
+                                                                    tint = MaterialTheme.colorScheme.primary,
                                                                     modifier = Modifier.size(13.dp)
                                                                 )
                                                                 Spacer(modifier = Modifier.width(4.dp))
@@ -922,27 +918,27 @@ fun DownloadsScreen(
                                                                     text = "Re-Download Album",
                                                                     style = MaterialTheme.typography.labelSmall,
                                                                     fontWeight = FontWeight.SemiBold,
-                                                                    color = ElectricCyan
+                                                                    color = MaterialTheme.colorScheme.primary
                                                                 )
                                                             }
                                                             if (album.albumUrl.isNotBlank()) {
                                                                 GlassPill(
                                                                     selected = false,
-                                                                    accentColor = TextPrimary,
+                                                                    accentColor = MaterialTheme.colorScheme.onSurface,
                                                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
                                                                     onClick = { onCopyAlbumLink(album.albumUrl) }
                                                                 ) {
                                                                     Icon(
                                                                         imageVector = Icons.Default.ContentCopy,
                                                                         contentDescription = "Copy Link",
-                                                                        tint = TextPrimary,
+                                                                        tint = MaterialTheme.colorScheme.onSurface,
                                                                         modifier = Modifier.size(12.dp)
                                                                     )
                                                                     Spacer(modifier = Modifier.width(4.dp))
                                                                     Text(
                                                                         text = "Copy Link",
                                                                         style = MaterialTheme.typography.labelSmall,
-                                                                        color = TextPrimary
+                                                                        color = MaterialTheme.colorScheme.onSurface
                                                                     )
                                                                 }
                                                                 GlassPill(
@@ -1077,9 +1073,9 @@ private fun AlbumFolderMergedGlassBanner(
     val hashtag = TelegramMediaShareHelper.buildHashtag(folderName)
 
     Surface(
-        color = GlassSurfaceWhite,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, GlassBorderLight),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("album_folder_banner_$folderName")
@@ -1115,11 +1111,11 @@ private fun AlbumFolderMergedGlassBanner(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Download/PulseGrab/$folderName",
+                            text = folderName.replace('_', ' '),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false)
                         )
@@ -1127,14 +1123,14 @@ private fun AlbumFolderMergedGlassBanner(
                             text = "$progressPercent%",
                             style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                             fontWeight = FontWeight.Bold,
-                            color = if (doneCount == totalCount) EmeraldSuccess else ElectricCyan
+                            color = if (doneCount == totalCount) EmeraldSuccess else MaterialTheme.colorScheme.primary
                         )
                     }
                     Text(
                         text = "$picCount JPG/IMG • $vidCount MP4/VID  |  $doneCount/$totalCount Done  •  $hashtag" +
                             if (failedCount > 0) " • $failedCount Failed" else "",
                         style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
-                        color = if (failedCount > 0) CoralError else TextSecondary,
+                        color = if (failedCount > 0) CoralError else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1149,7 +1145,7 @@ private fun AlbumFolderMergedGlassBanner(
                     Icon(
                         imageVector = if (isCollapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
                         contentDescription = if (isCollapsed) "Expand Album" else "Collapse Album",
-                        tint = TextSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -1175,14 +1171,14 @@ private fun AlbumFolderMergedGlassBanner(
                         Icon(
                             imageVector = Icons.Default.Link,
                             contentDescription = null,
-                            tint = ElectricCyan,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = sourceAlbumUrl,
                             style = MaterialTheme.typography.labelSmall,
-                            color = ElectricCyan,
+                            color = MaterialTheme.colorScheme.primary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1200,7 +1196,7 @@ private fun AlbumFolderMergedGlassBanner(
                             Icon(
                                 imageVector = Icons.Default.ContentCopy,
                                 contentDescription = "Copy Album Link",
-                                tint = TextSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -1231,7 +1227,7 @@ private fun AlbumFolderMergedGlassBanner(
                 color = when {
                     failedCount > 0 -> CoralError
                     doneCount == totalCount -> EmeraldSuccess
-                    else -> ElectricCyan
+                    else -> MaterialTheme.colorScheme.primary
                 },
                 trackColor = Color.White.copy(alpha = 0.12f)
             )
@@ -1245,7 +1241,7 @@ private fun AlbumFolderMergedGlassBanner(
                 if (doneCount > 0) {
                     GlassPill(
                         selected = true,
-                        accentColor = ElectricCyan,
+                        accentColor = MaterialTheme.colorScheme.primary,
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         onClick = onShareToTelegram,
                         modifier = Modifier.testTag("share_folder_telegram_$folderName")
@@ -1253,7 +1249,7 @@ private fun AlbumFolderMergedGlassBanner(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Share $folderName to Telegram",
-                            tint = ElectricCyan,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -1261,7 +1257,7 @@ private fun AlbumFolderMergedGlassBanner(
                             text = "Share to Telegram ($doneCount)",
                             style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                             fontWeight = FontWeight.Bold,
-                            color = ElectricCyan
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -1293,7 +1289,7 @@ private fun AlbumFolderMergedGlassBanner(
                 // Per-Album Diagnostic Logs button
                 GlassPill(
                     selected = false,
-                    accentColor = ElectricCyan,
+                    accentColor = MaterialTheme.colorScheme.primary,
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                     onClick = onOpenAlbumLogs,
                     modifier = Modifier.testTag("album_logs_$folderName")
@@ -1301,7 +1297,7 @@ private fun AlbumFolderMergedGlassBanner(
                     Icon(
                         imageVector = Icons.Default.Description,
                         contentDescription = "Logs for $folderName",
-                        tint = ElectricCyan,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -1309,14 +1305,14 @@ private fun AlbumFolderMergedGlassBanner(
                         text = "Logs",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = ElectricCyan
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
                 if (failedCount > 0) {
                     GlassPill(
                         selected = true,
-                        accentColor = ElectricCyan,
+                        accentColor = MaterialTheme.colorScheme.primary,
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         onClick = onSmartRedownloadAlbum,
                         modifier = Modifier.testTag("album_redownload_failed_$folderName")
@@ -1324,7 +1320,7 @@ private fun AlbumFolderMergedGlassBanner(
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Re-Download Failed in Album",
-                            tint = ElectricCyan,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -1332,7 +1328,7 @@ private fun AlbumFolderMergedGlassBanner(
                             text = "Re-Download ($failedCount)",
                             style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                             fontWeight = FontWeight.SemiBold,
-                            color = ElectricCyan
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -1430,7 +1426,7 @@ private fun DownloadTask1DMGlassRow(
 
     val statusColor = when (task.status) {
         DownloadStatus.COMPLETED -> EmeraldSuccess
-        DownloadStatus.DOWNLOADING, DownloadStatus.QUEUED -> ElectricCyan
+        DownloadStatus.DOWNLOADING, DownloadStatus.QUEUED -> MaterialTheme.colorScheme.primary
         DownloadStatus.PAUSED -> AmberWarning
         DownloadStatus.FAILED, DownloadStatus.CANCELLED -> CoralError
     }
@@ -1484,12 +1480,12 @@ private fun DownloadTask1DMGlassRow(
                             .clip(RoundedCornerShape(12.dp))
                             .background(
                                 if (task.mediaType == MediaType.VIDEO) VividViolet.copy(alpha = 0.18f)
-                                else ElectricCyan.copy(alpha = 0.16f)
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
                             )
                             .border(
                                 1.dp,
                                 if (task.mediaType == MediaType.VIDEO) VividViolet.copy(alpha = 0.4f)
-                                else ElectricCyan.copy(alpha = 0.4f),
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
                                 RoundedCornerShape(12.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -1498,13 +1494,13 @@ private fun DownloadTask1DMGlassRow(
                             Icon(
                                 imageVector = if (task.mediaType == MediaType.VIDEO) Icons.Default.Videocam else Icons.Default.Image,
                                 contentDescription = null,
-                                tint = if (task.mediaType == MediaType.VIDEO) VividViolet else ElectricCyan,
+                                tint = if (task.mediaType == MediaType.VIDEO) VividViolet else MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
                                 text = task.extension.uppercase().take(4),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -1521,7 +1517,7 @@ private fun DownloadTask1DMGlassRow(
                                 text = task.fileName,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = if (isExpanded) Int.MAX_VALUE else 2,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f)
@@ -1529,7 +1525,7 @@ private fun DownloadTask1DMGlassRow(
                             Icon(
                                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                                 contentDescription = if (isExpanded) "Collapse details" else "Expand full filename and URL",
-                                tint = TextSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier
                                     .padding(start = 4.dp)
                                     .size(18.dp)
@@ -1558,7 +1554,7 @@ private fun DownloadTask1DMGlassRow(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontFeatureSettings = "tnum"
                                 ),
-                                color = TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             val middleTag = when {
@@ -1574,7 +1570,7 @@ private fun DownloadTask1DMGlassRow(
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontFeatureSettings = "tnum"
                                     ),
-                                    color = ElectricCyan,
+                                    color = MaterialTheme.colorScheme.primary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -1611,14 +1607,14 @@ private fun DownloadTask1DMGlassRow(
                                     modifier = Modifier
                                         .size(38.dp)
                                         .clip(CircleShape)
-                                        .background(GlassSurfaceWhite)
-                                        .border(1.dp, GlassBorderLight, CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                                         .testTag("pause_download_${task.id}")
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Pause,
                                         contentDescription = "Pause ${task.fileName}",
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -1630,14 +1626,14 @@ private fun DownloadTask1DMGlassRow(
                                     modifier = Modifier
                                         .size(38.dp)
                                         .clip(CircleShape)
-                                        .background(ElectricCyan.copy(alpha = 0.2f))
-                                        .border(1.dp, ElectricCyan, CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                        .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
                                         .testTag("resume_download_${task.id}")
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.PlayArrow,
                                         contentDescription = "Resume ${task.fileName}",
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -1672,7 +1668,7 @@ private fun DownloadTask1DMGlassRow(
                                     Icon(
                                         imageVector = Icons.Default.Share,
                                         contentDescription = "Share ${task.fileName}",
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -1704,7 +1700,7 @@ private fun DownloadTask1DMGlassRow(
                             Icon(
                                 imageVector = Icons.Default.DeleteOutline,
                                 contentDescription = "Delete ${task.fileName}",
-                                tint = TextSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -1729,7 +1725,7 @@ private fun DownloadTask1DMGlassRow(
                         Text(
                             text = "File: ${task.fileName}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Path: Download/PulseGrab/${task.folderName}",
@@ -1739,7 +1735,7 @@ private fun DownloadTask1DMGlassRow(
                         Text(
                             text = "Source URL: ${task.url}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1748,7 +1744,7 @@ private fun DownloadTask1DMGlassRow(
                             Text(
                                 text = "View Diagnostic Logs →",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = ElectricCyan,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
@@ -1769,7 +1765,7 @@ private fun DownloadTask1DMGlassRow(
                         LinearProgressIndicator(
                             progress = { task.progressFraction },
                             color = statusColor,
-                            trackColor = GlassSurfaceWhite,
+                            trackColor = MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp)
@@ -1778,7 +1774,7 @@ private fun DownloadTask1DMGlassRow(
                     } else {
                         LinearProgressIndicator(
                             color = statusColor,
-                            trackColor = GlassSurfaceWhite,
+                            trackColor = MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp)

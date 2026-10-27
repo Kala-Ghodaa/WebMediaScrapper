@@ -156,9 +156,9 @@ class ExampleRobolectricTest {
             }
         }
 
-        // Verify full album folder banner path is present without arbitrary .take(12) truncation
+        // Verify the full human-readable album title is present without arbitrary truncation
         composeTestRule.onNodeWithTag("album_folder_banner_$longFolderName").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Download/PulseGrab/$longFolderName").assertIsDisplayed()
+        composeTestRule.onNodeWithText(longFolderName.replace('_', ' ')).assertIsDisplayed()
 
         // Verify item-level callbacks fire with exact task IDs
         composeTestRule.onNodeWithTag("downloads_list")

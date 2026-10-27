@@ -48,8 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.domain.model.ExtensionFilterConfig
-import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.MidnightSurfaceElevated
 import com.example.ui.theme.VividViolet
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -89,16 +87,16 @@ fun ExtensionFilterSheet(
                     Icon(
                         imageVector = Icons.Default.FilterList,
                         contentDescription = null,
-                        tint = ElectricCyan
+                        tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Media Extension Grabber Rules",
+                            text = "File types",
                             style = MaterialTheme.typography.titleLarge
                         )
                         Text(
-                            text = "Choose which file formats to detect & download",
+                            text = "Choose formats to detect and download",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -109,7 +107,7 @@ fun ExtensionFilterSheet(
                         onClick = { onSelectAllExtensions(true) },
                         modifier = Modifier.testTag("ext_enable_all_button")
                     ) {
-                        Text("All", color = ElectricCyan)
+                        Text("All", color = MaterialTheme.colorScheme.primary)
                     }
                     TextButton(
                         onClick = { onSelectAllExtensions(false) },
@@ -127,7 +125,7 @@ fun ExtensionFilterSheet(
                 Icon(
                     imageVector = Icons.Default.Image,
                     contentDescription = null,
-                    tint = ElectricCyan,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -162,14 +160,14 @@ fun ExtensionFilterSheet(
                             }
                         } else null,
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ElectricCyan.copy(alpha = 0.18f),
-                            selectedLabelColor = ElectricCyan,
-                            selectedLeadingIconColor = ElectricCyan
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                            selectedLabelColor = MaterialTheme.colorScheme.primary,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.primary
                         ),
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
                             selected = selected,
-                            selectedBorderColor = ElectricCyan,
+                            selectedBorderColor = MaterialTheme.colorScheme.primary,
                             borderColor = MaterialTheme.colorScheme.outline
                         ),
                         modifier = Modifier.testTag("toggle_img_ext_$ext")
@@ -267,7 +265,7 @@ fun ExtensionFilterSheet(
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, ElectricCyan),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .height(52.dp)
                         .testTag("add_custom_extension_button")
@@ -286,9 +284,9 @@ fun ExtensionFilterSheet(
                 ) {
                     config.customExtensions.forEach { ext ->
                         Surface(
-                            color = MidnightSurfaceElevated,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, ElectricCyan)
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -297,7 +295,7 @@ fun ExtensionFilterSheet(
                                 Text(
                                     text = ".${ext.uppercase()}",
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = ElectricCyan
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                                 IconButton(
                                     onClick = { onRemoveCustomExtension(ext) },
@@ -346,7 +344,7 @@ fun ExtensionFilterSheet(
             Spacer(modifier = Modifier.height(22.dp))
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()

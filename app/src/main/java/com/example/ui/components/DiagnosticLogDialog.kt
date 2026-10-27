@@ -64,15 +64,7 @@ import com.example.data.logging.LogCategory
 import com.example.data.logging.LogSeverity
 import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.CoralError
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.GlassBorderLight
-import com.example.ui.theme.GlassBorderSubtle
-import com.example.ui.theme.GlassSurfaceElevated
-import com.example.ui.theme.MidnightBg
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VividViolet
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -113,8 +105,8 @@ fun DiagnosticLogDialog(
                 .fillMaxSize()
                 .padding(horizontal = 8.dp, vertical = 16.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .border(1.dp, GlassBorderLight, RoundedCornerShape(24.dp)),
-            color = MidnightBg.copy(alpha = 0.96f)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
+            color = MaterialTheme.colorScheme.background.copy(alpha = 0.96f)
         ) {
             Column(
                 modifier = Modifier
@@ -129,15 +121,15 @@ fun DiagnosticLogDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Diagnostic Logs",
+                            text = "Logs",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${filteredLogs.size} of ${allLogs.size} entries · Real-time network & scraper capture",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -151,7 +143,7 @@ fun DiagnosticLogDialog(
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Share Logs",
-                                tint = ElectricCyan
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -180,7 +172,7 @@ fun DiagnosticLogDialog(
                             Icon(
                                 imageVector = Icons.Default.DeleteSweep,
                                 contentDescription = "Clear Logs",
-                                tint = TextMuted
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
@@ -191,7 +183,7 @@ fun DiagnosticLogDialog(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close",
-                                tint = TextPrimary
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -206,30 +198,30 @@ fun DiagnosticLogDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("logs_search_input"),
-                    placeholder = { Text("Filter by URL, domain, header, or error…", color = TextMuted) },
+                    placeholder = { Text("Filter by URL, domain, header, or error…", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = TextMuted
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear search", tint = TextMuted)
+                                Icon(Icons.Default.Close, contentDescription = "Clear search", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ElectricCyan,
-                        unfocusedBorderColor = GlassBorderSubtle,
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary,
-                        focusedContainerColor = GlassSurfaceElevated,
-                        unfocusedContainerColor = GlassSurfaceElevated
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     )
                 )
 
@@ -249,8 +241,8 @@ fun DiagnosticLogDialog(
                             },
                             label = { Text("All (${allLogs.size})") },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ElectricCyan.copy(alpha = 0.25f),
-                                selectedLabelColor = ElectricCyan
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
                             )
                         )
                     }
@@ -297,7 +289,7 @@ fun DiagnosticLogDialog(
                             text = if (allLogs.isEmpty()) "No diagnostic logs captured yet.\nStart scraping or downloading to see live network telemetry."
                             else "No logs match the current filters.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -327,23 +319,23 @@ private fun DiagnosticLogItemCard(entry: DiagnosticLogEntry) {
     val context = LocalContext.current
 
     val categoryColor = when (entry.category) {
-        LogCategory.HTTP_NETWORK -> ElectricCyan
+        LogCategory.HTTP_NETWORK -> MaterialTheme.colorScheme.primary
         LogCategory.SCRAPER -> VividViolet
         LogCategory.RECOVERY -> AmberWarning
         LogCategory.ALBUM_QUEUE -> EmeraldSuccess
-        LogCategory.GENERAL -> TextSecondary
+        LogCategory.GENERAL -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val levelBgColor = when (entry.severity) {
         LogSeverity.ERROR -> CoralError.copy(alpha = 0.15f)
         LogSeverity.WARN -> AmberWarning.copy(alpha = 0.12f)
-        LogSeverity.INFO -> GlassSurfaceElevated
+        LogSeverity.INFO -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
 
     val levelBorderColor = when (entry.severity) {
         LogSeverity.ERROR -> CoralError.copy(alpha = 0.6f)
         LogSeverity.WARN -> AmberWarning.copy(alpha = 0.5f)
-        LogSeverity.INFO -> GlassBorderSubtle
+        LogSeverity.INFO -> MaterialTheme.colorScheme.outlineVariant
     }
 
     val timeString = remember(entry.timestamp) {
@@ -373,7 +365,7 @@ private fun DiagnosticLogItemCard(entry: DiagnosticLogEntry) {
                         text = timeString,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 11.sp,
-                        color = TextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Box(
@@ -412,7 +404,7 @@ private fun DiagnosticLogItemCard(entry: DiagnosticLogEntry) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = if (expanded) "Collapse" else "Expand",
-                    tint = TextMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -423,7 +415,7 @@ private fun DiagnosticLogItemCard(entry: DiagnosticLogEntry) {
             Text(
                 text = entry.message,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (entry.severity == LogSeverity.ERROR) CoralError else TextPrimary,
+                color = if (entry.severity == LogSeverity.ERROR) CoralError else MaterialTheme.colorScheme.onSurface,
                 fontWeight = if (entry.severity == LogSeverity.ERROR) FontWeight.SemiBold else FontWeight.Normal
             )
 
@@ -434,7 +426,7 @@ private fun DiagnosticLogItemCard(entry: DiagnosticLogEntry) {
                     text = entry.url,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
-                    color = ElectricCyan.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
                     maxLines = if (expanded) 10 else 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -449,17 +441,17 @@ private fun DiagnosticLogItemCard(entry: DiagnosticLogEntry) {
                         text = "Request Headers:",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     val reqHeaderText = entry.requestHeaders.entries.joinToString("\n") { "${it.key}: ${it.value}" }
                     Text(
                         text = reqHeaderText,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 9.sp,
-                        color = TextMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MidnightBg, RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(6.dp))
                             .padding(6.dp)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
@@ -470,17 +462,17 @@ private fun DiagnosticLogItemCard(entry: DiagnosticLogEntry) {
                         text = "Response Headers:",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     val resHeaderText = entry.responseHeaders.entries.joinToString("\n") { "${it.key}: ${it.value}" }
                     Text(
                         text = resHeaderText,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 9.sp,
-                        color = TextMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MidnightBg, RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(6.dp))
                             .padding(6.dp)
                     )
                     Spacer(modifier = Modifier.height(6.dp))

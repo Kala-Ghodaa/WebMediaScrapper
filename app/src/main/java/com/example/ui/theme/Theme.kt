@@ -67,7 +67,7 @@ private val PulseGrabLightColorScheme = androidx.compose.material3.lightColorSch
 
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = androidx.compose.foundation.isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) PulseGrabDarkColorScheme else PulseGrabLightColorScheme

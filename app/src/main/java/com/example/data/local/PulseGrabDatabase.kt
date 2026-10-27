@@ -7,13 +7,19 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [DownloadTaskEntity::class, DownloadedAlbumEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class PulseGrabDatabase : RoomDatabase() {
     abstract fun downloadDao(): DownloadDao
 
     companion object {
+        val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE download_tasks ADD COLUMN destinationTreeUri TEXT")
+            }
+        }
+
         @Volatile
         private var INSTANCE: PulseGrabDatabase? = null
 
@@ -24,7 +30,7 @@ abstract class PulseGrabDatabase : RoomDatabase() {
                     PulseGrabDatabase::class.java,
                     "pulsegrab_downloads.db"
                 )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .addMigrations(MIGRATION_4_5)
                     .build()
                     .also { INSTANCE = it }
             }

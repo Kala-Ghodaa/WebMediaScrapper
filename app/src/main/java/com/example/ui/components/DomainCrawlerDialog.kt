@@ -53,9 +53,7 @@ import androidx.compose.ui.unit.dp
 import com.example.domain.model.DeepScanProgress
 import com.example.domain.model.DiscoveredPathPattern
 import com.example.ui.theme.AmberWarning
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.MidnightSurfaceElevated
 import com.example.ui.theme.VividViolet
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -106,11 +104,11 @@ fun DomainCrawlerDialog(
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "Domain Crawler Service",
+                        text = "Site crawler",
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        text = "Identifies common URL path patterns and recursively scrapes sub-pages",
+                        text = "Find media across linked pages on a site",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -169,7 +167,7 @@ fun DomainCrawlerDialog(
                     )
                     Row {
                         TextButton(onClick = { onSelectAllPatterns(true) }) {
-                            Text("All", color = ElectricCyan)
+                            Text("All", color = MaterialTheme.colorScheme.primary)
                         }
                         TextButton(onClick = { onSelectAllPatterns(false) }) {
                             Text("None", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -180,11 +178,11 @@ fun DomainCrawlerDialog(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     discoveredPatterns.forEach { item ->
                         Surface(
-                            color = MidnightSurfaceElevated,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             shape = RoundedCornerShape(10.dp),
                             border = BorderStroke(
                                 1.dp,
-                                if (item.isSelected) ElectricCyan else MaterialTheme.colorScheme.outlineVariant
+                                if (item.isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -200,7 +198,7 @@ fun DomainCrawlerDialog(
                                 Icon(
                                     imageVector = if (item.isSelected) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                     contentDescription = null,
-                                    tint = if (item.isSelected) ElectricCyan else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = if (item.isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -209,7 +207,7 @@ fun DomainCrawlerDialog(
                                         Text(
                                             text = item.pattern,
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = if (item.isSelected) ElectricCyan else MaterialTheme.colorScheme.onSurface,
+                                            color = if (item.isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -289,7 +287,7 @@ fun DomainCrawlerDialog(
             // Live Crawl Status Card
             if (crawlerProgress.isScanning || crawlerProgress.pagesScanned > 0) {
                 Surface(
-                    color = MidnightSurfaceElevated,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(
                         1.dp,
@@ -310,7 +308,7 @@ fun DomainCrawlerDialog(
                             Text(
                                 text = "${crawlerProgress.mediaFoundCount} Media Found",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = ElectricCyan
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -319,7 +317,7 @@ fun DomainCrawlerDialog(
                         } else 0f
                         LinearProgressIndicator(
                             progress = { frac },
-                            color = ElectricCyan,
+                            color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surface,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -359,7 +357,7 @@ fun DomainCrawlerDialog(
                 } else {
                     Button(
                         onClick = onStartCrawl,
-                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .weight(1f)

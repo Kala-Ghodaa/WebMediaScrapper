@@ -55,9 +55,7 @@ import com.example.domain.model.DeepScanMode
 import com.example.domain.model.DeepScanProgress
 import com.example.domain.model.ExtensionFilterConfig
 import com.example.ui.theme.AmberWarning
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.MidnightSurfaceElevated
 import com.example.ui.theme.VividViolet
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -97,13 +95,13 @@ fun DeepScanSheet(
                 Icon(
                     imageVector = Icons.Default.Radar,
                     contentDescription = null,
-                    tint = ElectricCyan,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(26.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Advanced Deep Domain & Pattern Scanner",
+                        text = "Deep scan",
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
@@ -202,8 +200,8 @@ fun DeepScanSheet(
                             onClick = { onUpdateConfig { it.copy(maxDepth = depthVal) } },
                             label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ElectricCyan.copy(alpha = 0.2f),
-                                selectedLabelColor = ElectricCyan
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
                             ),
                             modifier = Modifier.testTag("depth_chip_$depthVal")
                         )
@@ -278,7 +276,7 @@ fun DeepScanSheet(
                 if (expandedPatternPreview.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Surface(
-                        color = MidnightSurfaceElevated,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         shape = RoundedCornerShape(10.dp),
                         border = BorderStroke(1.dp, VividViolet.copy(alpha = 0.5f)),
                         modifier = Modifier.fillMaxWidth()
@@ -329,7 +327,7 @@ fun DeepScanSheet(
 
             // Active Extension Filter Summary Row
             Surface(
-                color = MidnightSurfaceElevated,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier.fillMaxWidth()
@@ -351,7 +349,7 @@ fun DeepScanSheet(
                                 .joinToString(", ") { ".${it.uppercase()}" } +
                                 if (extensionConfig.allEnabledExtensions.size > 8) " …" else "",
                             style = MaterialTheme.typography.labelSmall,
-                            color = ElectricCyan
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                     OutlinedButton(
@@ -374,7 +372,7 @@ fun DeepScanSheet(
             // Live Deep Scan Telemetry Card
             if (progress.isScanning || progress.pagesScanned > 0 || progress.errorMessage != null) {
                 Surface(
-                    color = MidnightSurfaceElevated,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(
                         1.dp,
@@ -410,7 +408,7 @@ fun DeepScanSheet(
                             Text(
                                 text = "${progress.mediaFoundCount} Media Grabbed",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = ElectricCyan
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -422,7 +420,7 @@ fun DeepScanSheet(
 
                         LinearProgressIndicator(
                             progress = { fraction },
-                            color = ElectricCyan,
+                            color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surface,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -511,7 +509,7 @@ fun DeepScanSheet(
                 } else {
                     Button(
                         onClick = onStartScan,
-                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .weight(1f)

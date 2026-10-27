@@ -1,0 +1,4 @@
+interface:
+  display_name: "PulseGrab Reviewer"
+  short_description: "Review Android media, storage, sharing, and Compose"
+  default_prompt: "Use $pulsegrab-reviewer to audit the PulseGrab changes for reproducible correctness, storage safety, and UI regressions."

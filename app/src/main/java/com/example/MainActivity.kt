@@ -59,10 +59,6 @@ import com.example.ui.components.ExtensionFilterSheet
 import com.example.ui.screens.DetectedMediaScreen
 import com.example.ui.screens.DownloadsScreen
 import com.example.ui.screens.HomeScreen
-import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.MidnightBg
-import com.example.ui.theme.MidnightSurface
-import com.example.ui.theme.MidnightSurfaceElevated
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.VividViolet
 
@@ -130,7 +126,9 @@ fun PulseGrabApp(viewModel: MainDownloaderViewModel) {
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-            } catch (_: Exception) {
+            } catch (_: SecurityException) {
+                viewModel.showSnackbar("Folder access could not be saved. Please choose the folder again.")
+                return@rememberLauncherForActivityResult
             }
             val displayName = uri.lastPathSegment?.substringAfterLast(':') ?: "Custom_Folder"
             viewModel.setCustomTreeUri(uri.toString(), displayName)
@@ -157,7 +155,7 @@ fun PulseGrabApp(viewModel: MainDownloaderViewModel) {
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            containerColor = MidnightBg,
+            containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets.safeDrawing,
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             bottomBar = {
@@ -429,6 +427,8 @@ fun PulseGrabApp(viewModel: MainDownloaderViewModel) {
                 com.example.ui.components.TelegramFolderShareSheet(
                     folderName = shareFolder,
                     folderTasks = folderTasks,
+                    isPreparing = uiState.isPreparingTelegramShare,
+                    statusMessage = uiState.telegramShareMessage,
                     sourceAlbumUrl = sourceUrl,
                     onShareFolderBatchToTelegram = { tasksToShare, caption, preferTelegramDirect ->
                         viewModel.shareFolderBatchToTelegram(
@@ -471,7 +471,7 @@ private fun PulseGrabBottomBar(
     onSelectDestination: (AppDestination) -> Unit
 ) {
     NavigationBar(
-        containerColor = MidnightSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier.testTag("bottom_navigation_bar")
     ) {
         NavigationBarItem(
@@ -485,9 +485,9 @@ private fun PulseGrabBottomBar(
             },
             label = { Text("Home") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = ElectricCyan,
-                selectedTextColor = ElectricCyan,
-                indicatorColor = MidnightSurfaceElevated
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.surfaceContainerHigh
             ),
             modifier = Modifier.testTag("nav_item_home")
         )
@@ -500,7 +500,7 @@ private fun PulseGrabBottomBar(
                     badge = {
                         if (detectedCount > 0) {
                             Badge(
-                                containerColor = ElectricCyan,
+                                containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             ) {
                                 Text(detectedCount.toString())
@@ -516,9 +516,9 @@ private fun PulseGrabBottomBar(
             },
             label = { Text("Detected") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = ElectricCyan,
-                selectedTextColor = ElectricCyan,
-                indicatorColor = MidnightSurfaceElevated
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.surfaceContainerHigh
             ),
             modifier = Modifier.testTag("nav_item_detected")
         )
@@ -547,9 +547,9 @@ private fun PulseGrabBottomBar(
             },
             label = { Text("Downloads") },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = ElectricCyan,
-                selectedTextColor = ElectricCyan,
-                indicatorColor = MidnightSurfaceElevated
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.surfaceContainerHigh
             ),
             modifier = Modifier.testTag("nav_item_downloads")
         )
@@ -564,7 +564,7 @@ private fun PulseGrabNavigationRail(
     onSelectDestination: (AppDestination) -> Unit
 ) {
     NavigationRail(
-        containerColor = MidnightSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier.testTag("side_navigation_rail")
     ) {
         NavigationRailItem(
@@ -586,7 +586,7 @@ private fun PulseGrabNavigationRail(
                 BadgedBox(
                     badge = {
                         if (detectedCount > 0) {
-                            Badge(containerColor = ElectricCyan) {
+                            Badge(containerColor = MaterialTheme.colorScheme.primary) {
                                 Text(detectedCount.toString())
                             }
                         }
@@ -659,14 +659,12 @@ private fun shareDownloadedFile(
     }
     try {
         val uri = Uri.parse(uriStr)
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = task.mimeType
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_TEXT, "Downloaded via PulseGrab: ${task.fileName}")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
+        val shareIntent = com.example.ui.components.TelegramMediaShareHelper.buildShareIntent(
+            listOf(uri), listOf(task.mimeType), "Downloaded via PulseGrab: ${task.fileName}"
+        )
         val chooser = Intent.createChooser(shareIntent, "Share ${task.fileName}").apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = shareIntent.clipData
         }
         context.startActivity(chooser)
     } catch (_: Exception) {

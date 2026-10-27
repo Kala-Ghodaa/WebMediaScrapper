@@ -44,9 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.example.domain.model.DownloadFolderConfig
 import com.example.domain.model.DownloadFolderMode
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.MidnightSurfaceElevated
 import com.example.ui.theme.VividViolet
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,13 +77,13 @@ fun FolderSelectionDialog(
                 Icon(
                     imageVector = Icons.Default.Folder,
                     contentDescription = null,
-                    tint = ElectricCyan,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(26.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "Download Destination Folder",
+                        text = "Save location",
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
@@ -178,7 +176,7 @@ fun FolderSelectionDialog(
 
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -206,11 +204,11 @@ private fun FolderOptionCard(
     extraContent: (@Composable () -> Unit)? = null
 ) {
     Surface(
-        color = MidnightSurfaceElevated,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(
             1.dp,
-            if (selected) ElectricCyan else MaterialTheme.colorScheme.outlineVariant
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -225,13 +223,13 @@ private fun FolderOptionCard(
                 RadioButton(
                     selected = selected,
                     onClick = onClick,
-                    colors = RadioButtonDefaults.colors(selectedColor = ElectricCyan)
+                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (selected) ElectricCyan else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))

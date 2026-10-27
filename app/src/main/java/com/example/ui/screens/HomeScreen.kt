@@ -63,6 +63,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Badge
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -80,6 +81,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -111,15 +113,7 @@ import com.example.ui.components.GlassHeaderSurface
 import com.example.ui.components.GlassPill
 import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.CoralError
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.GlassBorderLight
-import com.example.ui.theme.GlassBorderSubtle
-import com.example.ui.theme.GlassSurfaceWhite
-import com.example.ui.theme.MidnightSurface
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VividViolet
 
 @Composable
@@ -202,9 +196,7 @@ fun HomeScreen(
                         onUrlInputChange(pasted)
                         onShowMessage("Pasted URL from clipboard")
                     } else {
-                        val sampleUrl = "https://commons.wikimedia.org/wiki/Commons:Featured_pictures"
-                        onUrlInputChange(sampleUrl)
-                        onShowMessage("Clipboard empty — inserted sample media URL")
+                        onShowMessage("Clipboard is empty. Copy a page URL first.")
                     }
                 },
                 onGrabberBadgeClick = { onQuickAccessClick(MediaTabFilter.ALL, null) },
@@ -254,18 +246,6 @@ fun HomeScreen(
                 }
 
                 // Compact Glass Format Filter Pills
-                item {
-                    ExtensionGrabberQuickStrip(
-                        enabledImageExts = uiState.extensionConfig.enabledImageExtensions,
-                        enabledVideoExts = uiState.extensionConfig.enabledVideoExtensions,
-                        customExts = uiState.extensionConfig.customExtensions,
-                        onConfigureClick = onOpenExtensionSheet,
-                        onChipClick = { ext ->
-                            onQuickAccessClick(MediaTabFilter.ALL, ext)
-                        }
-                    )
-                }
-
                 // 2x2 Speed-Dial Glass Portals (Decluttered)
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -275,14 +255,14 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Speed Dial & Media Hubs",
+                                text = "Explore",
                                 style = MaterialTheme.typography.titleSmall,
-                                color = TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "Tap to launch",
+                                text = "Open a source",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = ElectricCyan
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -332,7 +312,7 @@ fun HomeScreen(
                             Text(
                                 text = "Recent Transfers",
                                 style = MaterialTheme.typography.titleSmall,
-                                color = TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (uiState.downloadTasks.isNotEmpty()) {
                                 TextButton(
@@ -343,7 +323,7 @@ fun HomeScreen(
                                     Text(
                                         text = "All (${uiState.downloadTasks.size})",
                                         style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
-                                        color = ElectricCyan
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
@@ -360,7 +340,7 @@ fun HomeScreen(
                                 if (failedCount > 0) {
                                     GlassPill(
                                         selected = true,
-                                        accentColor = ElectricCyan,
+                                        accentColor = MaterialTheme.colorScheme.primary,
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                         onClick = onSmartRedownloadFailed,
                                         modifier = Modifier.testTag("home_smart_redownload_failed_button")
@@ -368,7 +348,7 @@ fun HomeScreen(
                                         Icon(
                                             imageVector = Icons.Default.Refresh,
                                             contentDescription = null,
-                                            tint = ElectricCyan,
+                                            tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
@@ -376,7 +356,7 @@ fun HomeScreen(
                                             text = "Re-Download Failed ($failedCount)",
                                             style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                                             fontWeight = FontWeight.SemiBold,
-                                            color = ElectricCyan
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
@@ -446,13 +426,13 @@ fun HomeScreen(
                                     modifier = Modifier
                                         .size(38.dp)
                                         .clip(CircleShape)
-                                        .background(ElectricCyan.copy(alpha = 0.14f)),
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Downloading,
                                         contentDescription = null,
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -465,7 +445,7 @@ fun HomeScreen(
                                     Text(
                                         text = "Browse any site or tap Detected Media to grab images & videos.",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -538,27 +518,12 @@ private fun GlassBrowserTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back to Home",
-                        tint = TextPrimary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             } else {
-                // 1DM-style Glass Tab Counter Box `[1]`
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(GlassSurfaceWhite)
-                        .border(1.dp, GlassBorderLight, RoundedCornerShape(9.dp))
-                        .clickable { onSubmitUrl() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "1",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = ElectricCyan
-                    )
-                }
+                Icon(Icons.Default.Downloading, contentDescription = "PulseGrab",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             }
 
             // Pill-Shaped Frosted Glass Omnibox (`Search or Type URL`)
@@ -571,7 +536,7 @@ private fun GlassBrowserTopBar(
                     .border(
                         width = 1.dp,
                         brush = Brush.horizontalGradient(
-                            listOf(GlassBorderLight, ElectricCyan.copy(alpha = 0.35f))
+                            listOf(MaterialTheme.colorScheme.outlineVariant, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                         ),
                         shape = RoundedCornerShape(50)
                     )
@@ -594,7 +559,7 @@ private fun GlassBrowserTopBar(
                         Text(
                             text = "Search or type URL…",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1
                         )
                     }
@@ -602,8 +567,8 @@ private fun GlassBrowserTopBar(
                         value = urlInput,
                         onValueChange = onUrlInputChange,
                         singleLine = true,
-                        textStyle = MaterialTheme.typography.bodySmall.copy(color = TextPrimary),
-                        cursorBrush = SolidColor(ElectricCyan),
+                        textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Go
@@ -625,7 +590,7 @@ private fun GlassBrowserTopBar(
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Reload and Rescan",
-                            tint = TextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(17.dp)
                         )
                     }
@@ -639,7 +604,7 @@ private fun GlassBrowserTopBar(
                         Icon(
                             imageVector = Icons.Default.ContentPaste,
                             contentDescription = "Paste URL",
-                            tint = ElectricCyan,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -651,7 +616,7 @@ private fun GlassBrowserTopBar(
                 badge = {
                     if (detectedCount > 0) {
                         Badge(
-                            containerColor = ElectricCyan,
+                            containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = Color.Black
                         ) {
                             Text(detectedCount.toString())
@@ -664,12 +629,12 @@ private fun GlassBrowserTopBar(
                         .size(38.dp)
                         .clip(CircleShape)
                         .background(
-                            if (detectedCount > 0) ElectricCyan.copy(alpha = 0.18f)
-                            else GlassSurfaceWhite
+                            if (detectedCount > 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                            else MaterialTheme.colorScheme.surfaceContainer
                         )
                         .border(
                             1.dp,
-                            if (detectedCount > 0) ElectricCyan.copy(alpha = 0.6f) else GlassBorderSubtle,
+                            if (detectedCount > 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant,
                             CircleShape
                         )
                         .clickable(onClick = onGrabberBadgeClick),
@@ -678,7 +643,7 @@ private fun GlassBrowserTopBar(
                     Icon(
                         imageVector = Icons.Default.Bolt,
                         contentDescription = "Detected Media Grabber",
-                        tint = if (detectedCount > 0) ElectricCyan else TextSecondary,
+                        tint = if (detectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -695,15 +660,15 @@ private fun GlassBrowserTopBar(
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "Browser & Grabber Options",
-                        tint = TextPrimary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    containerColor = MidnightSurface.copy(alpha = 0.96f),
-                    border = BorderStroke(1.dp, GlassBorderLight),
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     DropdownMenuItem(
@@ -713,15 +678,15 @@ private fun GlassBrowserTopBar(
                                 Text(
                                     "$enabledFormatsCount extensions active",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = ElectricCyan
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.FilterList, contentDescription = null, tint = ElectricCyan)
+                            Icon(Icons.Default.FilterList, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
                         trailingIcon = {
-                            Icon(Icons.Default.CheckBox, contentDescription = null, tint = ElectricCyan)
+                            Icon(Icons.Default.CheckBox, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
                         onClick = {
                             menuExpanded = false
@@ -738,7 +703,7 @@ private fun GlassBrowserTopBar(
                             Icon(
                                 imageVector = if (skipDuplicates) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                                 contentDescription = null,
-                                tint = if (skipDuplicates) EmeraldSuccess else TextSecondary
+                                tint = if (skipDuplicates) EmeraldSuccess else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
                         onClick = {
@@ -746,7 +711,7 @@ private fun GlassBrowserTopBar(
                         }
                     )
 
-                    HorizontalDivider(color = GlassBorderSubtle)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                     DropdownMenuItem(
                         text = {
@@ -796,7 +761,7 @@ private fun GlassBrowserTopBar(
                             )
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.Radar, contentDescription = null, tint = ElectricCyan)
+                            Icon(Icons.Default.Radar, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
                         onClick = {
                             menuExpanded = false
@@ -832,7 +797,7 @@ private fun GlassBrowserTopBar(
                             )
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.Downloading, contentDescription = null, tint = ElectricCyan)
+                            Icon(Icons.Default.Downloading, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
                         onClick = {
                             menuExpanded = false
@@ -858,192 +823,23 @@ private fun GlassCommandHeroCard(
     onOpenExtensionSheetClick: () -> Unit,
     onOpenFolderSheetClick: () -> Unit
 ) {
-    GlassCard(
-        shape = RoundedCornerShape(22.dp),
-        accentColor = ElectricCyan,
-        elevated = true,
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("hero_command_card")
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "PULSEGRAB GLASS ENGINE",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ElectricCyan
-                    )
-                    Text(
-                        text = "Web Media & Album Grabber",
-                        style = MaterialTheme.typography.titleLarge
-                    )
+    GlassCard(modifier = Modifier.fillMaxWidth().testTag("hero_command_card")) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Your media workspace", style = MaterialTheme.typography.titleLarge)
+            Text("Open a page above, or collect an album with the tools below.",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = onOpenAlbumBatchClick, modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("open_album_batch_button")) {
+                    Text(if (isAlbumBatchRunning) "Album running…" else "Album grabber")
                 }
-
-                // Quick Folder Pill (No arbitrary character truncation)
-                GlassPill(
-                    selected = true,
-                    accentColor = EmeraldSuccess,
-                    onClick = onOpenFolderSheetClick,
-                    modifier = Modifier.widthIn(max = 170.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Folder,
-                        contentDescription = "Folder",
-                        tint = EmeraldSuccess,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = activeFolderName,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = EmeraldSuccess,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                OutlinedButton(onClick = onOpenDeepScanClick, modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("open_deep_scan_button")) {
+                    Text(if (isDeepScanning) "Scanning…" else "Deep scan")
                 }
             }
-
-            // Balanced 2x2 Action Grid: Gives every label generous horizontal room at any font scale
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Primary Glowing Glass Button: Open Browser
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 46.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(ElectricCyan, Color(0xFF00B4D8))
-                                )
-                            )
-                            .clickable(onClick = onOpenBrowserClick)
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
-                            .testTag("open_browser_button"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = null,
-                                tint = Color.Black,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Browse URL",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = Color.Black,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    // Glass Pill: Album Folder Batch Grabber
-                    GlassPill(
-                        selected = isAlbumBatchRunning,
-                        accentColor = if (isAlbumBatchRunning) AmberWarning else EmeraldSuccess,
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 11.dp),
-                        onClick = onOpenAlbumBatchClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 46.dp)
-                            .testTag("open_album_batch_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Folder,
-                            contentDescription = null,
-                            tint = if (isAlbumBatchRunning) AmberWarning else EmeraldSuccess,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isAlbumBatchRunning) "Batching…" else "Album Batch",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Glass Pill: Deep / Pattern Scan
-                    GlassPill(
-                        selected = isDeepScanning,
-                        accentColor = if (isDeepScanning) AmberWarning else VividViolet,
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                        onClick = onOpenDeepScanClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 44.dp)
-                            .testTag("open_deep_scan_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Radar,
-                            contentDescription = null,
-                            tint = if (isDeepScanning) AmberWarning else VividViolet,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isDeepScanning) "Scanning…" else "Pattern Scan",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    // Glass Pill: Extension Rules
-                    GlassPill(
-                        selected = false,
-                        accentColor = ElectricCyan,
-                        shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                        onClick = onOpenExtensionSheetClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 44.dp)
-                            .testTag("hero_extension_rules_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = "Extension rules",
-                            tint = ElectricCyan,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Formats ($enabledExtensionsCount)",
-                            style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
-                            color = ElectricCyan,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
+            TextButton(onClick = onOpenFolderSheetClick) {
+                Icon(Icons.Default.Folder, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Save to $activeFolderName", maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -1089,7 +885,7 @@ private fun ExtensionGrabberQuickStrip(
             customExts.map { it to false })
 
         allActive.forEach { (ext, isVid) ->
-            val accent = if (isVid) VividViolet else ElectricCyan
+            val accent = if (isVid) VividViolet else MaterialTheme.colorScheme.primary
             GlassPill(
                 selected = false,
                 accentColor = accent,
@@ -1120,7 +916,7 @@ private fun QuickAccessMediaSection(
         QuickAccessGlassCard(
             title = "All Media",
             count = allCount,
-            accentColor = ElectricCyan,
+            accentColor = MaterialTheme.colorScheme.primary,
             icon = Icons.Default.Collections,
             testTag = "quick_access_all",
             modifier = Modifier.weight(1f),
@@ -1189,14 +985,14 @@ private fun QuickAccessGlassCard(
                 Text(
                     text = count.toString(),
                     style = MaterialTheme.typography.titleLarge,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
         }
@@ -1227,13 +1023,13 @@ private fun PortalSpeedDialGlassTile(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = ElectricCyan.copy(alpha = 0.16f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
                         text = portal.badge,
                         style = MaterialTheme.typography.labelSmall,
-                        color = ElectricCyan,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
@@ -1263,7 +1059,7 @@ private fun PortalSpeedDialGlassTile(
             Text(
                 text = portal.subtitle,
                 style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1278,7 +1074,7 @@ private fun RecentDownloadGlassRow(
     onShare: () -> Unit,
     onClickCard: () -> Unit
 ) {
-    val accent = if (task.status == DownloadStatus.COMPLETED) EmeraldSuccess else ElectricCyan
+    val accent = if (task.status == DownloadStatus.COMPLETED) EmeraldSuccess else MaterialTheme.colorScheme.primary
 
     GlassCard(
         shape = RoundedCornerShape(14.dp),
@@ -1295,7 +1091,7 @@ private fun RecentDownloadGlassRow(
                         modifier = Modifier
                             .fillMaxHeight()
                             .fillMaxWidth(task.progressFraction.coerceIn(0.04f, 1f))
-                            .background(ElectricCyan.copy(alpha = 0.10f))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
                     )
                 }
             }
@@ -1312,14 +1108,14 @@ private fun RecentDownloadGlassRow(
                         .clip(RoundedCornerShape(10.dp))
                         .background(
                             if (task.mediaType == MediaType.VIDEO) VividViolet.copy(alpha = 0.18f)
-                            else ElectricCyan.copy(alpha = 0.16f)
+                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (task.mediaType == MediaType.VIDEO) Icons.Default.Videocam else Icons.Default.Image,
                         contentDescription = null,
-                        tint = if (task.mediaType == MediaType.VIDEO) VividViolet else ElectricCyan,
+                        tint = if (task.mediaType == MediaType.VIDEO) VividViolet else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -1361,7 +1157,7 @@ private fun RecentDownloadGlassRow(
                         Icon(
                             imageVector = Icons.Default.Share,
                             contentDescription = "Share ${task.fileName}",
-                            tint = ElectricCyan,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -1391,6 +1187,11 @@ private fun InAppBrowserInspector(
 ) {
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var webViewGeneration by remember { mutableIntStateOf(0) }
+    val currentPageUrl by rememberUpdatedState(uiState.activeBrowserUrl)
+    BackHandler {
+        val webView = webViewRef
+        if (webView?.canGoBack() == true) webView.goBack() else onCloseBrowser()
+    }
 
     GlassBackground(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -1457,7 +1258,7 @@ private fun InAppBrowserInspector(
                     Text(
                         text = "Pattern Scan",
                         style = MaterialTheme.typography.labelSmall,
-                        color = ElectricCyan,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .clickable { onOpenDeepScanSheet() }
                             .testTag("browser_deep_scan_button")
@@ -1465,7 +1266,7 @@ private fun InAppBrowserInspector(
                     Text(
                         text = "Formats (${uiState.extensionConfig.allEnabledExtensions.size})",
                         style = MaterialTheme.typography.labelSmall,
-                        color = ElectricCyan,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .clickable { onOpenExtensionSheet() }
                             .testTag("browser_extension_rules_button")
@@ -1476,7 +1277,7 @@ private fun InAppBrowserInspector(
             if (uiState.isPageLoading) {
                 LinearProgressIndicator(
                     progress = { (uiState.pageProgress / 100f).coerceIn(0.05f, 1f) },
-                    color = ElectricCyan,
+                    color = MaterialTheme.colorScheme.primary,
                     trackColor = Color.Transparent,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1510,6 +1311,7 @@ private fun InAppBrowserInspector(
                             webViewClient = object : WebViewClient() {
                                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                                     super.onPageStarted(view, url, favicon)
+                                    view?.tag = url // User navigation is already loading; do not issue a second loadUrl from update.
                                     onUpdateBrowserPageState(url, true, 15, null)
                                 }
 
@@ -1528,7 +1330,7 @@ private fun InAppBrowserInspector(
                                     if (!reqUrl.isNullOrBlank()) {
                                         scannerEngine.inspectNetworkRequest(
                                             requestUrl = reqUrl,
-                                            pageUrl = uiState.activeBrowserUrl
+                                            pageUrl = currentPageUrl
                                         )
                                     }
                                     return super.shouldInterceptRequest(view, request)
@@ -1634,7 +1436,7 @@ private fun InAppBrowserInspector(
                 )
                 .border(
                     width = 1.dp,
-                    brush = Brush.horizontalGradient(listOf(ElectricCyan, VividViolet)),
+                    brush = Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, VividViolet)),
                     shape = RoundedCornerShape(50)
                 )
                 .clickable(onClick = onViewDetectedMedia)
@@ -1645,14 +1447,14 @@ private fun InAppBrowserInspector(
                 Icon(
                     imageVector = Icons.Default.Bolt,
                     contentDescription = null,
-                    tint = ElectricCyan,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "${uiState.allDetectedCount} files (${uiState.detectedImageCount} IMG · ${uiState.detectedVideoCount} VID)",
                     style = MaterialTheme.typography.labelLarge,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }

@@ -74,6 +74,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,18 +99,10 @@ import com.example.ui.components.GlassCard
 import com.example.ui.components.GlassHeaderSurface
 import com.example.ui.components.GlassPill
 import com.example.ui.theme.AmberWarning
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.GlassBorderLight
-import com.example.ui.theme.GlassBorderSubtle
-import com.example.ui.theme.GlassSurfaceWhite
-import com.example.ui.theme.MidnightBg
-import com.example.ui.theme.MidnightSurface
-import com.example.ui.theme.MidnightSurfaceElevated
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VividViolet
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun DetectedMediaScreen(
     uiState: MainUiState,
@@ -131,8 +124,8 @@ fun DetectedMediaScreen(
     onOpenFolderSheet: () -> Unit,
     onClearDetected: () -> Unit
 ) {
-    var showSearchBar by remember { mutableStateOf(false) }
-    var isListView by remember { mutableStateOf(false) }
+    var showSearchBar by rememberSaveable { mutableStateOf(false) }
+    var isListView by rememberSaveable { mutableStateOf(false) }
 
     GlassBackground(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -145,14 +138,13 @@ fun DetectedMediaScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Row 1: Title + Folder Destination Pill + Compact Action Icons
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "File(s) detected!",
+                                text = "Detected media",
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Row(
@@ -162,9 +154,9 @@ fun DetectedMediaScreen(
                                 Text(
                                     text = "${uiState.filteredMediaItems.size} items",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = ElectricCyan
+                                    color = MaterialTheme.colorScheme.primary
                                 )
-                                Text("•", color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+                                Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
@@ -191,9 +183,10 @@ fun DetectedMediaScreen(
                             }
                         }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             // Domain Crawler Pill
                             GlassPill(
@@ -213,7 +206,7 @@ fun DetectedMediaScreen(
                                 Text(
                                     text = if (uiState.crawlerProgress.isScanning) "Crawling…" else "Crawler",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = TextPrimary
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
@@ -221,13 +214,13 @@ fun DetectedMediaScreen(
                             IconButton(
                                 onClick = onOpenDeepScanSheet,
                                 modifier = Modifier
-                                    .size(34.dp)
+                                    .size(48.dp)
                                     .testTag("detected_deep_scan_button")
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Radar,
                                     contentDescription = "Pattern Scan",
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -235,12 +228,12 @@ fun DetectedMediaScreen(
                             // Search & Filter Toggle Icon
                             IconButton(
                                 onClick = { showSearchBar = !showSearchBar },
-                                modifier = Modifier.size(34.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Search,
-                                    contentDescription = "Toggle Search",
-                                    tint = if (showSearchBar || uiState.searchQuery.isNotEmpty()) ElectricCyan else TextSecondary,
+                                    contentDescription = "Search and quick filters",
+                                    tint = if (showSearchBar || uiState.searchQuery.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -249,13 +242,13 @@ fun DetectedMediaScreen(
                             IconButton(
                                 onClick = onOpenExtensionSheet,
                                 modifier = Modifier
-                                    .size(34.dp)
+                                    .size(48.dp)
                                     .testTag("detected_extension_rules_button")
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.FilterList,
                                     contentDescription = "Extension Grabber Rules",
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -265,13 +258,13 @@ fun DetectedMediaScreen(
                                 IconButton(
                                     onClick = onClearDetected,
                                     modifier = Modifier
-                                        .size(34.dp)
+                                        .size(48.dp)
                                         .testTag("clear_detected_button")
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.DeleteSweep,
                                         contentDescription = "Clear detected list",
-                                        tint = TextSecondary,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -280,17 +273,15 @@ fun DetectedMediaScreen(
                     }
 
                     // Row 2: Clean Glass Category Pills + List/Grid Toggle + Select All Checkbox
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("detected_media_tabs"),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth().testTag("detected_media_tabs"),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             GlassPill(
                                 selected = uiState.tabFilter == MediaTabFilter.ALL,
-                                accentColor = ElectricCyan,
+                                accentColor = MaterialTheme.colorScheme.primary,
                                 contentPadding = PaddingValues(horizontal = 11.dp, vertical = 6.dp),
                                 onClick = { onSelectTab(MediaTabFilter.ALL) },
                                 modifier = Modifier.testTag("tab_all_media")
@@ -298,7 +289,7 @@ fun DetectedMediaScreen(
                                 Text(
                                     text = "ALL (${uiState.allDetectedCount})",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (uiState.tabFilter == MediaTabFilter.ALL) ElectricCyan else TextSecondary
+                                    color = if (uiState.tabFilter == MediaTabFilter.ALL) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
@@ -312,7 +303,7 @@ fun DetectedMediaScreen(
                                 Text(
                                     text = "IMG (${uiState.detectedImageCount})",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (uiState.tabFilter == MediaTabFilter.IMAGES) EmeraldSuccess else TextSecondary
+                                    color = if (uiState.tabFilter == MediaTabFilter.IMAGES) EmeraldSuccess else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
@@ -326,7 +317,7 @@ fun DetectedMediaScreen(
                                 Text(
                                     text = "VID (${uiState.detectedVideoCount})",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (uiState.tabFilter == MediaTabFilter.VIDEOS) VividViolet else TextSecondary
+                                    color = if (uiState.tabFilter == MediaTabFilter.VIDEOS) VividViolet else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -343,34 +334,22 @@ fun DetectedMediaScreen(
                                 Icon(
                                     imageVector = if (isListView) Icons.Default.GridView else Icons.AutoMirrored.Filled.ViewList,
                                     contentDescription = "Switch View Mode",
-                                    tint = ElectricCyan,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
 
                             val allSelected = uiState.filteredMediaItems.isNotEmpty() &&
-                                uiState.selectedIds.size >= uiState.filteredMediaItems.size
+                                uiState.filteredMediaItems.all { it.id in uiState.selectedIds }
 
-                            GlassPill(
-                                selected = allSelected,
-                                accentColor = ElectricCyan,
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
-                                onClick = {
-                                    if (allSelected) onDeselectAll() else onSelectAll()
-                                },
-                                modifier = Modifier.testTag("select_all_button")
+                            IconButton(
+                                onClick = { if (allSelected) onDeselectAll() else onSelectAll() },
+                                modifier = Modifier.size(48.dp).testTag("select_all_button")
                             ) {
                                 Icon(
                                     imageVector = if (allSelected) Icons.Default.CheckBox else Icons.Default.SelectAll,
-                                    contentDescription = null,
-                                    tint = ElectricCyan,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (allSelected) "None" else "Select all",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = ElectricCyan
+                                    contentDescription = if (allSelected) "Deselect all media" else "Select all visible media",
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
 
@@ -380,12 +359,14 @@ fun DetectedMediaScreen(
                                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                                     modifier = Modifier.testTag("deselect_all_button")
                                 ) {
-                                    Text("Clear", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                                    Text("Clear", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
                     }
 
+                    // Quick format presets are secondary; reveal them with search/filter controls.
+                    if (showSearchBar || uiState.selectedExtensionChips.isNotEmpty()) {
                     // Row 3: Single Sleek Multi-Select Extension Chip Bar + Presets
                     Row(
                         modifier = Modifier
@@ -397,7 +378,7 @@ fun DetectedMediaScreen(
                         // All Formats Reset Chip
                         GlassPill(
                             selected = uiState.selectedExtensionChips.isEmpty(),
-                            accentColor = ElectricCyan,
+                            accentColor = MaterialTheme.colorScheme.primary,
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
                             onClick = { onApplyExtensionPreset(ExtensionChipPreset.ALL) },
                             modifier = Modifier.testTag("preset_all_extensions")
@@ -405,7 +386,7 @@ fun DetectedMediaScreen(
                             Text(
                                 text = "All Formats",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (uiState.selectedExtensionChips.isEmpty()) ElectricCyan else TextSecondary
+                                color = if (uiState.selectedExtensionChips.isEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
@@ -431,16 +412,16 @@ fun DetectedMediaScreen(
                                     )
                                 },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    containerColor = GlassSurfaceWhite,
-                                    selectedContainerColor = ElectricCyan.copy(alpha = 0.22f),
-                                    selectedLabelColor = ElectricCyan,
-                                    selectedLeadingIconColor = ElectricCyan
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary
                                 ),
                                 border = FilterChipDefaults.filterChipBorder(
                                     enabled = true,
                                     selected = isSelected,
-                                    selectedBorderColor = ElectricCyan,
-                                    borderColor = GlassBorderSubtle
+                                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant
                                 ),
                                 modifier = Modifier
                                     .heightIn(min = 32.dp)
@@ -456,7 +437,7 @@ fun DetectedMediaScreen(
                             onClick = { onApplyExtensionPreset(ExtensionChipPreset.PHOTOS) },
                             modifier = Modifier.testTag("preset_photos")
                         ) {
-                            Text("Photos", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                            Text("Photos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
                         GlassPill(
@@ -466,18 +447,20 @@ fun DetectedMediaScreen(
                             onClick = { onApplyExtensionPreset(ExtensionChipPreset.VIDEOS) },
                             modifier = Modifier.testTag("preset_videos")
                         ) {
-                            Text("Videos", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                            Text("Videos", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
 
                         GlassPill(
                             selected = false,
-                            accentColor = ElectricCyan,
+                            accentColor = MaterialTheme.colorScheme.primary,
                             contentPadding = PaddingValues(horizontal = 9.dp, vertical = 5.dp),
                             onClick = { onApplyExtensionPreset(ExtensionChipPreset.VECTORS) },
                             modifier = Modifier.testTag("preset_vectors")
                         ) {
-                            Text("Vectors", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                            Text("Vectors", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                    }
+
                     }
 
                     // Collapsible Search & Skip Duplicates Bar (Zero Clutter by Default)
@@ -520,7 +503,7 @@ fun DetectedMediaScreen(
                                 Text(
                                     text = "Skip duplicate URLs",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Switch(
                                     checked = uiState.skipDuplicates,
@@ -625,7 +608,7 @@ fun DetectedMediaScreen(
                     )
                     .border(
                         width = 1.dp,
-                        brush = Brush.horizontalGradient(listOf(ElectricCyan, VividViolet)),
+                        brush = Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, VividViolet)),
                         shape = RoundedCornerShape(22.dp)
                     )
                     .padding(horizontal = 14.dp, vertical = 10.dp)
@@ -640,7 +623,7 @@ fun DetectedMediaScreen(
                         Text(
                             text = "${uiState.selectedIds.size} selected",
                             style = MaterialTheme.typography.titleSmall,
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -671,7 +654,7 @@ fun DetectedMediaScreen(
 
                     Button(
                         onClick = onBulkDownloadSelected,
-                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(14.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                         modifier = Modifier.testTag("bulk_download_button")
@@ -721,7 +704,7 @@ private fun DetectedMedia1DMListRow(
     onQuickDownload: () -> Unit
 ) {
     val accent = when {
-        isSelected -> ElectricCyan
+        isSelected -> MaterialTheme.colorScheme.primary
         item.isAlreadyDownloaded -> EmeraldSuccess
         else -> null
     }
@@ -746,7 +729,7 @@ private fun DetectedMedia1DMListRow(
                 modifier = Modifier
                     .size(62.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MidnightBg),
+                    .background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ) {
                 if (item.mediaType == MediaType.IMAGE) {
@@ -766,7 +749,7 @@ private fun DetectedMedia1DMListRow(
                 }
 
                 Surface(
-                    color = MidnightBg.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
                     shape = RoundedCornerShape(4.dp),
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -775,7 +758,7 @@ private fun DetectedMedia1DMListRow(
                     Text(
                         text = item.extensionBadge,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (item.mediaType == MediaType.VIDEO) VividViolet else ElectricCyan,
+                        color = if (item.mediaType == MediaType.VIDEO) VividViolet else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                     )
                 }
@@ -795,7 +778,7 @@ private fun DetectedMedia1DMListRow(
                 Text(
                     text = item.url,
                     style = MaterialTheme.typography.labelSmall,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -806,13 +789,13 @@ private fun DetectedMedia1DMListRow(
                 ) {
                     if (item.hasDimensions) {
                         Surface(
-                            color = GlassSurfaceWhite,
+                            color = MaterialTheme.colorScheme.surfaceContainer,
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
                                 text = item.dimensionsLabel,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = ElectricCyan,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                             )
                         }
@@ -850,7 +833,7 @@ private fun DetectedMedia1DMListRow(
                 Icon(
                     imageVector = Icons.Default.ZoomIn,
                     contentDescription = "Preview ${item.title}",
-                    tint = TextSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -864,7 +847,7 @@ private fun DetectedMedia1DMListRow(
                 Icon(
                     imageVector = Icons.Default.Download,
                     contentDescription = "Download ${item.title}",
-                    tint = ElectricCyan,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -872,7 +855,7 @@ private fun DetectedMedia1DMListRow(
             Icon(
                 imageVector = if (isSelected) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                 contentDescription = if (isSelected) "Selected" else "Not selected",
-                tint = if (isSelected) ElectricCyan else TextSecondary,
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .padding(start = 4.dp)
                     .size(20.dp)
@@ -890,7 +873,7 @@ private fun DetectedMediaGlassGridCard(
     onQuickDownload: () -> Unit
 ) {
     val accent = when {
-        isSelected -> ElectricCyan
+        isSelected -> MaterialTheme.colorScheme.primary
         item.isAlreadyDownloaded -> EmeraldSuccess
         else -> null
     }
@@ -909,7 +892,7 @@ private fun DetectedMediaGlassGridCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1.25f)
-                    .background(MidnightBg)
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 Box(
                     modifier = Modifier
@@ -928,7 +911,7 @@ private fun DetectedMediaGlassGridCard(
                     Icon(
                         imageVector = if (item.mediaType == MediaType.VIDEO) Icons.Default.PlayCircleFilled else Icons.Default.Image,
                         contentDescription = null,
-                        tint = if (item.mediaType == MediaType.VIDEO) VividViolet.copy(alpha = 0.7f) else ElectricCyan.copy(alpha = 0.4f),
+                        tint = if (item.mediaType == MediaType.VIDEO) VividViolet.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -950,14 +933,14 @@ private fun DetectedMediaGlassGridCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Surface(
-                        color = if (item.mediaType == MediaType.VIDEO) VividViolet.copy(alpha = 0.88f) else MidnightBg.copy(alpha = 0.75f),
+                        color = if (item.mediaType == MediaType.VIDEO) VividViolet.copy(alpha = 0.88f) else MaterialTheme.colorScheme.background.copy(alpha = 0.75f),
                         shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(0.5.dp, GlassBorderLight)
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Text(
                             text = item.extensionBadge,
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (item.mediaType == MediaType.VIDEO) Color.White else ElectricCyan,
+                            color = if (item.mediaType == MediaType.VIDEO) Color.White else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -984,8 +967,8 @@ private fun DetectedMediaGlassGridCard(
                         .padding(8.dp)
                         .size(26.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) ElectricCyan else MidnightBg.copy(alpha = 0.65f))
-                        .border(1.dp, if (isSelected) ElectricCyan else GlassBorderLight, CircleShape),
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background.copy(alpha = 0.65f))
+                        .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -999,7 +982,7 @@ private fun DetectedMediaGlassGridCard(
                 // Bottom-Left Dimensions Glass Badge
                 if (item.hasDimensions) {
                     Surface(
-                        color = MidnightBg.copy(alpha = 0.75f),
+                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.75f),
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -1062,7 +1045,7 @@ private fun DetectedMediaGlassGridCard(
                     Text(
                         text = item.url.substringAfter("://").substringBefore('/'),
                         style = MaterialTheme.typography.labelSmall,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1075,7 +1058,7 @@ private fun DetectedMediaGlassGridCard(
                     Icon(
                         imageVector = Icons.Default.ZoomIn,
                         contentDescription = "Preview ${item.title}",
-                        tint = TextSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(17.dp)
                     )
                 }
@@ -1089,7 +1072,7 @@ private fun DetectedMediaGlassGridCard(
                     Icon(
                         imageVector = Icons.Default.Download,
                         contentDescription = "Download ${item.title}",
-                        tint = ElectricCyan,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(17.dp)
                     )
                 }
@@ -1123,13 +1106,13 @@ private fun EmptyDetectedState(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(ElectricCyan.copy(alpha = 0.14f)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Collections,
                         contentDescription = null,
-                        tint = ElectricCyan,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -1141,12 +1124,13 @@ private fun EmptyDetectedState(
                 Text(
                     text = "Browse a page, toggle extension filter chips above, or run the Domain Crawler to discover files.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
+                        modifier = Modifier.fillMaxWidth(),
                         onClick = onOpenCrawler,
                         colors = ButtonDefaults.buttonColors(containerColor = VividViolet)
                     ) {
@@ -1154,7 +1138,7 @@ private fun EmptyDetectedState(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Domain Crawler")
                     }
-                    OutlinedButton(onClick = onOpenExtensions) {
+                    OutlinedButton(onClick = onOpenExtensions, modifier = Modifier.fillMaxWidth()) {
                         Icon(imageVector = Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Rules")
@@ -1173,9 +1157,9 @@ private fun MediaPreviewDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            color = MidnightSurface.copy(alpha = 0.96f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
             shape = RoundedCornerShape(22.dp),
-            border = BorderStroke(1.dp, ElectricCyan.copy(alpha = 0.5f)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -1197,13 +1181,13 @@ private fun MediaPreviewDialog(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        color = ElectricCyan.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = ".${item.extensionBadge}",
                             style = MaterialTheme.typography.labelMedium,
-                            color = ElectricCyan,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
@@ -1216,7 +1200,7 @@ private fun MediaPreviewDialog(
                         .fillMaxWidth()
                         .height(220.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(MidnightBg),
+                        .background(MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.Center
                 ) {
                     if (item.mediaType == MediaType.IMAGE) {
@@ -1248,7 +1232,7 @@ private fun MediaPreviewDialog(
                 Text(
                     text = item.url,
                     style = MaterialTheme.typography.labelSmall,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1257,7 +1241,7 @@ private fun MediaPreviewDialog(
                     Text(
                         text = "${item.dimensionsLabel} • ${item.mimeType}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = ElectricCyan
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -1273,7 +1257,7 @@ private fun MediaPreviewDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = onDownload,
-                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,

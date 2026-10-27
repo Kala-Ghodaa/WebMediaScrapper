@@ -4,11 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.LinearGradient
-import android.graphics.Paint
-import android.graphics.Shader
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -28,11 +23,16 @@ import com.example.domain.model.MediaType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
@@ -48,10 +48,12 @@ import java.util.concurrent.TimeUnit
 
 class DownloadRepository(
     private val context: Context,
-    private val downloadDao: DownloadDao
+    private val downloadDao: DownloadDao,
+    recoverOnStartup: Boolean = true
 ) {
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val concurrencySemaphore = Semaphore(3)
+    private val enqueueMutex = kotlinx.coroutines.sync.Mutex()
     private val activeJobs = ConcurrentHashMap<String, Job>()
     private val albumRefreshCache = ConcurrentHashMap<String, Pair<Long, List<DetectedMediaItem>>>()
     private val albumRefreshLocks = ConcurrentHashMap<String, kotlinx.coroutines.sync.Mutex>()
@@ -69,7 +71,12 @@ class DownloadRepository(
     init {
         com.example.data.scanner.BrowserHttpBridge.init(context)
         createNotificationChannel()
-        recoverHungAndMergeExistingFoldersOnStartup()
+        if (recoverOnStartup) recoverHungAndMergeExistingFoldersOnStartup()
+    }
+
+    fun close() {
+        repositoryScope.cancel()
+        activeJobs.clear()
     }
 
     /**
@@ -269,6 +276,7 @@ class DownloadRepository(
         task: DownloadTaskEntity,
         refererToFolder: Map<String, String>
     ): String {
+        if (task.destinationTreeUri != null) return com.example.domain.model.DownloadFolderConfig.sanitizeFolderName(task.folderName)
         val fromReferer = if (task.refererUrl.isNotBlank()) refererToFolder[task.refererUrl] else null
         if (!fromReferer.isNullOrBlank()) {
             return fromReferer
@@ -279,6 +287,7 @@ class DownloadRepository(
     }
 
     private suspend fun resolveUnifiedFolderForSingleTask(task: DownloadTaskEntity): String {
+        if (task.destinationTreeUri != null) return com.example.domain.model.DownloadFolderConfig.sanitizeFolderName(task.folderName)
         if (task.refererUrl.isNotBlank()) {
             val album = downloadDao.getDownloadedAlbum(task.refererUrl)
             if (album != null) {
@@ -317,6 +326,10 @@ class DownloadRepository(
         unifiedFolder: String
     ): Uri? {
         val safeFolder = com.example.domain.model.DownloadFolderConfig.sanitizeFolderName(unifiedFolder)
+        oldUriString?.let { stored ->
+            val uri = Uri.parse(stored)
+            if (android.provider.DocumentsContract.isDocumentUri(context, uri) && isContentUriReadable(uri)) return uri
+        }
         // First check if the file is already in Download/PulseGrab/<safeFolder>/<fileName>
         val existingInDownload = findExistingFileInDownloadFolderUri(safeFolder, fileName)
         if (!oldUriString.isNullOrBlank()) {
@@ -585,8 +598,9 @@ class DownloadRepository(
         items: List<DetectedMediaItem>,
         skipDuplicates: Boolean,
         folderConfig: com.example.domain.model.DownloadFolderConfig = activeFolderConfig
-    ): Int {
-        this.activeFolderConfig = folderConfig
+    ): Int = withContext(Dispatchers.IO) {
+        enqueueMutex.withLock {
+        this@DownloadRepository.activeFolderConfig = folderConfig
         val defaultFolder = folderConfig.activeSubfolderName
         val refererToFolder = buildRefererToUnifiedFolderMap()
         val touchedAlbums = LinkedHashMap<String, Triple<String, String, Int>>()
@@ -668,15 +682,10 @@ class DownloadRepository(
             val cleanExt = item.extension.lowercase(Locale.US).ifBlank {
                 if (item.mediaType == MediaType.VIDEO) "mp4" else "jpg"
             }
-            val safeBaseName = item.title
-                .replace(Regex("[^a-zA-Z0-9._-]"), "_")
-                .trim('_')
-                .ifBlank { "pulsegrab_${item.id}" }
-            val fileName = if (safeBaseName.lowercase(Locale.US).endsWith(".$cleanExt")) {
-                safeBaseName
-            } else {
-                "$safeBaseName.$cleanExt"
-            }
+            val existingTasks = downloadDao.getTasksByFolderNameOnce(itemFolder)
+            val fileName = existingTasks.firstOrNull { it.id == item.id }?.fileName
+                ?: MediaFileNames.choose(item.title, cleanExt, item.normalizedUrl,
+                    existingTasks.map { it.fileName }.toSet())
 
             val tempFile = File(getTempDir(), "${item.id}.part")
             val entity = DownloadTaskEntity(
@@ -696,7 +705,10 @@ class DownloadRepository(
                 totalBytes = item.estimatedSizeBytes,
                 speedBytesPerSec = 0L,
                 tempFilePath = tempFile.absolutePath,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                destinationTreeUri = folderConfig.customTreeUri.takeIf {
+                    folderConfig.folderMode == com.example.domain.model.DownloadFolderMode.SAF_CUSTOM_TREE
+                }
             )
             downloadDao.upsertTask(entity)
             startDownloadWorker(entity.id)
@@ -720,14 +732,17 @@ class DownloadRepository(
             )
         }
 
-        return enqueuedCount
+        enqueuedCount
+        }
     }
 
     fun pauseDownload(taskId: String) {
-        activeJobs.remove(taskId)?.cancel()
+        val previous = activeJobs[taskId]
+        previous?.cancel()
         repositoryScope.launch {
+            previous?.join()
             val task = downloadDao.getTaskById(taskId)
-            if (task != null) {
+            if (task != null && task.status != DownloadStatus.COMPLETED.name) {
                 val unifiedFolder = resolveUnifiedFolderForSingleTask(task)
                 downloadDao.upsertTask(
                     task.copy(
@@ -746,7 +761,7 @@ class DownloadRepository(
         repositoryScope.launch {
             val task = downloadDao.getTaskById(taskId) ?: return@launch
             if (com.example.domain.usecase.UrlMediaUtils.isThumbnailOrHptUrl(task.url)) {
-                downloadDao.updateStatusAndError(task.id, DownloadStatus.COMPLETED.name, "Skipped protected thumbnail")
+                downloadDao.updateStatusAndError(task.id, DownloadStatus.CANCELLED.name, "Skipped protected thumbnail")
                 return@launch
             }
             val unifiedFolder = resolveUnifiedFolderForSingleTask(task)
@@ -768,10 +783,10 @@ class DownloadRepository(
         repositoryScope.launch {
             val task = downloadDao.getTaskById(taskId) ?: return@launch
             if (com.example.domain.usecase.UrlMediaUtils.isThumbnailOrHptUrl(task.url)) {
-                downloadDao.updateStatusAndError(task.id, DownloadStatus.COMPLETED.name, "Skipped protected thumbnail")
+                downloadDao.updateStatusAndError(task.id, DownloadStatus.CANCELLED.name, "Skipped protected thumbnail")
                 return@launch
             }
-            activeJobs.remove(taskId)?.cancel()
+            activeJobs[taskId]?.cancelAndJoin()
             task.tempFilePath?.let { runCatching { File(it).delete() } }
             val unifiedFolder = resolveUnifiedFolderForSingleTask(task)
             downloadDao.updateStatusAndError(
@@ -801,8 +816,10 @@ class DownloadRepository(
     }
 
     fun deleteDownloadTask(taskId: String) {
-        activeJobs.remove(taskId)?.cancel()
+        val previous = activeJobs[taskId]
+        previous?.cancel()
         repositoryScope.launch {
+            previous?.join()
             val task = downloadDao.getTaskById(taskId)
             task?.tempFilePath?.let { File(it).delete() }
             downloadDao.deleteTaskById(taskId)
@@ -823,13 +840,14 @@ class DownloadRepository(
     fun clearAllUnfinishedAndError() {
         val runningIds = activeJobs.keys.toList()
         for (id in runningIds) {
-            activeJobs.remove(id)?.cancel()
+            activeJobs[id]?.cancel()
             cancelNotification(id)
         }
         repositoryScope.launch {
+            runningIds.forEach { activeJobs[it]?.join() }
             val unfinished = downloadDao.getUnfinishedTasksOnce()
             for (task in unfinished) {
-                activeJobs.remove(task.id)?.cancel()
+                activeJobs[task.id]?.cancelAndJoin()
                 task.tempFilePath?.let { runCatching { File(it).delete() } }
                 cancelNotification(task.id)
             }
@@ -847,7 +865,7 @@ class DownloadRepository(
         repositoryScope.launch {
             val failed = downloadDao.getFailedTasksOnce()
             for (task in failed) {
-                activeJobs.remove(task.id)?.cancel()
+                activeJobs[task.id]?.cancelAndJoin()
                 task.tempFilePath?.let { runCatching { File(it).delete() } }
                 cancelNotification(task.id)
             }
@@ -861,10 +879,11 @@ class DownloadRepository(
     fun clearAllDownloads() {
         val runningIds = activeJobs.keys.toList()
         for (id in runningIds) {
-            activeJobs.remove(id)?.cancel()
+            activeJobs[id]?.cancel()
             cancelNotification(id)
         }
         repositoryScope.launch {
+            runningIds.forEach { activeJobs[it]?.join() }
             val all = downloadDao.getAllTasksOnce()
             for (task in all) {
                 task.tempFilePath?.let { runCatching { File(it).delete() } }
@@ -884,10 +903,11 @@ class DownloadRepository(
     fun pauseAllActive() {
         val runningIds = activeJobs.keys.toList()
         for (id in runningIds) {
-            activeJobs.remove(id)?.cancel()
+            activeJobs[id]?.cancel()
             cancelNotification(id)
         }
         repositoryScope.launch {
+            runningIds.forEach { activeJobs[it]?.join() }
             val refererToFolder = buildRefererToUnifiedFolderMap()
             val unfinished = downloadDao.getUnfinishedTasksOnce()
             for (task in unfinished) {
@@ -919,7 +939,7 @@ class DownloadRepository(
             val refererToFolder = buildRefererToUnifiedFolderMap()
             val unfinished = downloadDao.getUnfinishedTasksOnce()
             for (thumb in unfinished.filter { com.example.domain.usecase.UrlMediaUtils.isThumbnailOrHptUrl(it.url) }) {
-                downloadDao.updateStatusAndError(thumb.id, DownloadStatus.COMPLETED.name, "Skipped protected thumbnail")
+                downloadDao.updateStatusAndError(thumb.id, DownloadStatus.CANCELLED.name, "Skipped protected thumbnail")
             }
             val targets = unfinished.filter { task ->
                 val isCurrentlyRunning = (task.status == DownloadStatus.DOWNLOADING.name) &&
@@ -992,7 +1012,7 @@ class DownloadRepository(
             }
 
             for (thumb in candidates.filter { com.example.domain.usecase.UrlMediaUtils.isThumbnailOrHptUrl(it.url) }) {
-                downloadDao.updateStatusAndError(thumb.id, DownloadStatus.COMPLETED.name, "Skipped protected thumbnail")
+                downloadDao.updateStatusAndError(thumb.id, DownloadStatus.CANCELLED.name, "Skipped protected thumbnail")
             }
             val validCandidates = candidates.filterNot { com.example.domain.usecase.UrlMediaUtils.isThumbnailOrHptUrl(it.url) }
 
@@ -1008,7 +1028,7 @@ class DownloadRepository(
                     continue
                 }
 
-                activeJobs.remove(task.id)?.cancel()
+                activeJobs[task.id]?.cancelAndJoin()
                 val isPausedOnly = task.status == DownloadStatus.PAUSED.name && !includePaused
                 if (!isPausedOnly) {
                     task.tempFilePath?.let { runCatching { File(it).delete() } }
@@ -1052,7 +1072,7 @@ class DownloadRepository(
             val tasks = downloadDao.getTasksByFolderNameOnce(folderName)
             for (task in tasks) {
                 if (task.status == DownloadStatus.DOWNLOADING.name || task.status == DownloadStatus.QUEUED.name) {
-                    activeJobs.remove(task.id)?.cancel()
+                    activeJobs[task.id]?.cancelAndJoin()
                     downloadDao.updateStatusAndError(task.id, DownloadStatus.PAUSED.name, null)
                     cancelNotification(task.id)
                 }
@@ -1125,7 +1145,7 @@ class DownloadRepository(
             val targets = tasks.filter { it.status != DownloadStatus.COMPLETED.name }
             var count = 0
             for (task in targets) {
-                activeJobs.remove(task.id)?.cancel()
+                activeJobs[task.id]?.cancelAndJoin()
                 task.tempFilePath?.let { runCatching { File(it).delete() } }
                 downloadDao.updateStatusAndError(
                     id = task.id,
@@ -1157,7 +1177,7 @@ class DownloadRepository(
             val tasks = downloadDao.getTasksByFolderNameOnce(folderName)
             for (task in tasks) {
                 if (task.status != DownloadStatus.COMPLETED.name) {
-                    activeJobs.remove(task.id)?.cancel()
+                    activeJobs[task.id]?.cancelAndJoin()
                     task.tempFilePath?.let { runCatching { File(it).delete() } }
                     cancelNotification(task.id)
                     downloadDao.deleteTaskById(task.id)
@@ -1328,16 +1348,24 @@ class DownloadRepository(
     }
 
     private fun startDownloadWorker(taskId: String) {
-        if (activeJobs.containsKey(taskId)) return
-        val job = repositoryScope.launch {
-            concurrencySemaphore.withPermit {
-                executeDownload(taskId)
+        val job = repositoryScope.launch(start = CoroutineStart.LAZY) {
+            try {
+                concurrencySemaphore.withPermit { executeDownload(taskId) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                downloadDao.updateStatusAndError(taskId, DownloadStatus.FAILED.name,
+                    error.localizedMessage ?: "Download or storage failed. Retry when storage is available.")
+                cancelNotification(taskId)
+                DiagnosticLogManager.error(tag = "MediaDownload", message = "Worker failed", throwable = error)
             }
         }
-        activeJobs[taskId] = job
-        job.invokeOnCompletion {
-            activeJobs.remove(taskId)
+        if (activeJobs.putIfAbsent(taskId, job) != null) {
+            job.cancel()
+            return
         }
+        job.invokeOnCompletion { activeJobs.remove(taskId, job) }
+        job.start()
     }
 
     private suspend fun executeDownload(taskId: String) {
@@ -1361,7 +1389,7 @@ class DownloadRepository(
             )
             downloadDao.updateProgress(
                 id = taskId,
-                status = DownloadStatus.COMPLETED.name,
+                status = DownloadStatus.CANCELLED.name,
                 downloadedBytes = 0L,
                 totalBytes = 0L,
                 speedBytesPerSec = 0L
@@ -1413,14 +1441,12 @@ class DownloadRepository(
                         throw IllegalStateException("HTTP 403 Soft-Block (Server returned HTML instead of media)")
                     }
 
-                    val isResumed = response.code == 206 && existingBytes > 0L
                     val body = response.body ?: throw IllegalStateException("Empty response body")
-                    val contentLength = body.contentLength()
-                    val totalBytes = when {
-                        isResumed && contentLength > 0 -> existingBytes + contentLength
-                        contentLength > 0 -> contentLength
-                        else -> currentEntity.totalBytes
-                    }
+                    val transfer = DownloadResponseValidator.validate(
+                        response.code, existingBytes, body.contentLength(), response.header("Content-Range")
+                    )
+                    val isResumed = transfer.append
+                    val totalBytes = transfer.totalBytes
 
                     var bytesWritten = if (isResumed) existingBytes else 0L
                     var windowStartMs = System.currentTimeMillis()
@@ -1466,9 +1492,8 @@ class DownloadRepository(
                         }
                     }
 
-                    if (bytesWritten <= 0L) {
-                        throw IllegalStateException("Zero bytes received from server")
-                    }
+                    DownloadResponseValidator.requireComplete(bytesWritten, transfer)
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
 
                     // Always resolve the latest unified folder right when saving so even in-flight/processing tasks merge cleanly
                     val latestTask = downloadDao.getTaskById(taskId) ?: currentEntity
@@ -1479,8 +1504,9 @@ class DownloadRepository(
                         fileName = currentEntity.fileName,
                         mimeType = currentEntity.mimeType,
                         mediaType = mediaTypeEnum,
-                        subfolderName = finalUnifiedFolder
-                    )
+                        subfolderName = finalUnifiedFolder,
+                        destinationTreeUri = currentEntity.destinationTreeUri
+                    ) ?: throw java.io.IOException("Could not save downloaded file. Check available storage and folder access.")
                     tempFile.delete()
 
                     if (latestTask.folderName != finalUnifiedFolder) {
@@ -1549,10 +1575,11 @@ class DownloadRepository(
                         fileName = currentEntity.fileName,
                         mimeType = currentEntity.mimeType,
                         mediaType = mediaTypeEnum,
-                        subfolderName = finalUnifiedFolder
+                        subfolderName = finalUnifiedFolder,
+                        destinationTreeUri = currentEntity.destinationTreeUri
                     )
-                    tempFile.delete()
                     if (savedUri != null) {
+                        tempFile.delete()
                         val size = webViewBytes.size.toLong()
                         downloadDao.markCompleted(
                             id = taskId,
@@ -1576,26 +1603,6 @@ class DownloadRepository(
             }
         }
 
-        // If offline or test showcase image failed over network, generate a fallback valid image for showcase/demo URLs
-        if (currentEntity.mediaType == MediaType.IMAGE.name &&
-            (currentEntity.url.contains("picsum.photos") || currentEntity.url.contains("wikimedia.org"))
-        ) {
-            val fallbackResult = createFallbackShowcaseImage(currentEntity, tempFile)
-            if (fallbackResult != null) {
-                val (uri, size) = fallbackResult
-                downloadDao.markCompleted(
-                    id = taskId,
-                    status = DownloadStatus.COMPLETED.name,
-                    downloadedBytes = size,
-                    totalBytes = size,
-                    localUri = uri.toString(),
-                    completedAt = System.currentTimeMillis()
-                )
-                postCompletedNotification(currentEntity.fileName, taskId, size)
-                return
-            }
-        }
-
         val errMsg = "${lastException?.localizedMessage ?: "Transfer failed"} (Tap Re-Download Failed to refresh album)"
         DiagnosticLogManager.error(
             tag = "MediaDownload",
@@ -1612,58 +1619,25 @@ class DownloadRepository(
         cancelNotification(taskId)
     }
 
-    private fun createFallbackShowcaseImage(
-        entity: DownloadTaskEntity,
-        tempFile: File
-    ): Pair<Uri, Long>? {
-        return try {
-            val w = (entity.width.takeIf { it in 120..2048 } ?: 1280)
-            val h = (entity.height.takeIf { it in 120..2048 } ?: 720)
-            val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                shader = LinearGradient(
-                    0f,
-                    0f,
-                    w.toFloat(),
-                    h.toFloat(),
-                    intArrayOf(0xFF0B0F19.toInt(), 0xFF1E1B4B.toInt(), 0xFF005B7F.toInt()),
-                    null,
-                    Shader.TileMode.CLAMP
-                )
-            }
-            canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
-            FileOutputStream(tempFile).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
-            }
-            bitmap.recycle()
-            val size = tempFile.length()
-            val uri = saveFileToMediaStore(
-                sourceFile = tempFile,
-                fileName = entity.fileName,
-                mimeType = "image/jpeg",
-                mediaType = MediaType.IMAGE,
-                subfolderName = entity.folderName
-            ) ?: return null
-            tempFile.delete()
-            uri to size
-        } catch (_: Exception) {
-            null
-        }
-    }
-
     /**
      * Saves BOTH pictures and videos for an album into ONE unified folder inside `Download/PulseGrab/<Album_Title>/`
      * (`Environment.DIRECTORY_DOWNLOADS/PulseGrab/<Album_Title>/` or `<SAF_Custom_Root>/<Album_Title>/`).
      * Never splits or moves files into `DCIM`. Also runs `MediaScannerConnection.scanFile` on the saved file
      * inside `Download/PulseGrab/<Album_Title>/` so Android indexes it in-place for Gallery & Telegram sharing.
      */
+    private fun copyFileToContentUri(sourceFile: File, uri: Uri) {
+        val output = context.contentResolver.openOutputStream(uri, "wt")
+            ?: throw java.io.IOException("Storage provider did not open an output stream")
+        output.use { out -> FileInputStream(sourceFile).use { it.copyTo(out, 16 * 1024) } }
+    }
+
     private fun saveFileToMediaStore(
         sourceFile: File,
         fileName: String,
         mimeType: String,
         mediaType: MediaType,
-        subfolderName: String = "PulseGrab"
+        subfolderName: String = "PulseGrab",
+        destinationTreeUri: String? = null
     ): Uri? {
         val resolver = context.contentResolver
         val safeSubfolder = subfolderName.trim()
@@ -1689,31 +1663,31 @@ class DownloadRepository(
         }
 
         // 1. SAF Custom Tree Directory (if user chose custom device folder)
-        if (activeFolderConfig.folderMode == com.example.domain.model.DownloadFolderMode.SAF_CUSTOM_TREE &&
-            !activeFolderConfig.customTreeUri.isNullOrBlank()
-        ) {
+        if (!destinationTreeUri.isNullOrBlank()) {
             try {
-                val treeUri = Uri.parse(activeFolderConfig.customTreeUri)
+                val treeUri = Uri.parse(destinationTreeUri)
                 val rootDocId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
                 val rootDocUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(treeUri, rootDocId)
-                val targetDirUri = if (safeSubfolder.isNotBlank() &&
-                    !safeSubfolder.equals(activeFolderConfig.customTreeDisplayName, ignoreCase = true)
-                ) {
-                    findOrCreateSafSubfolder(resolver, treeUri, rootDocId, rootDocUri, safeSubfolder) ?: rootDocUri
+                val targetDirUri = if (safeSubfolder.isNotBlank()) {
+                    findOrCreateSafSubfolder(resolver, treeUri, rootDocId, rootDocUri, safeSubfolder)
+                        ?: throw java.io.IOException("Could not create album folder")
                 } else {
                     rootDocUri
                 }
                 val createdUri = android.provider.DocumentsContract.createDocument(resolver, targetDirUri, resolvedMime, fileName)
                 if (createdUri != null) {
-                    resolver.openOutputStream(createdUri)?.use { outStream ->
-                        FileInputStream(sourceFile).use { inStream ->
-                            inStream.copyTo(outStream, bufferSize = 16 * 1024)
-                        }
+                    try {
+                        copyFileToContentUri(sourceFile, createdUri)
+                        return createdUri
+                    } catch (error: Exception) {
+                        runCatching { android.provider.DocumentsContract.deleteDocument(resolver, createdUri) }
+                        throw error
                     }
-                    return createdUri
                 }
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                DiagnosticLogManager.error(tag = "MediaStorage", message = "Selected folder is not writable", throwable = error)
             }
+            return null
         }
 
         // 2. Primary Unified Download Directory (`Download/PulseGrab/<safeSubfolder>/`)
@@ -1747,15 +1721,14 @@ class DownloadRepository(
 
                 val targetUri = resolver.insert(collection, values)
                 if (targetUri != null) {
-                    resolver.openOutputStream(targetUri)?.use { outStream ->
-                        FileInputStream(sourceFile).use { inStream ->
-                            inStream.copyTo(outStream, bufferSize = 16 * 1024)
-                        }
+                    try {
+                        copyFileToContentUri(sourceFile, targetUri)
+                        val completeValues = ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }
+                        check(resolver.update(targetUri, completeValues, null, null) > 0) { "Could not publish saved file" }
+                    } catch (error: Exception) {
+                        runCatching { resolver.delete(targetUri, null, null) }
+                        throw error
                     }
-                    val completeValues = ContentValues().apply {
-                        put(MediaStore.MediaColumns.IS_PENDING, 0)
-                    }
-                    resolver.update(targetUri, completeValues, null, null)
                     scanDownloadFileInPlace(safeSubfolder, fileName, resolvedMime)
                     return targetUri
                 }
@@ -1825,7 +1798,7 @@ class DownloadRepository(
                 "${context.packageName}.fileprovider",
                 file
             )
-        }.getOrElse { Uri.fromFile(file) }
+        }.getOrThrow()
     }
 
     private fun findExistingFileInDownloadFolderUri(folderName: String, fileName: String): Uri? {
@@ -1896,147 +1869,38 @@ class DownloadRepository(
         return 0L
     }
 
-    /**
-     * Resolves 100% shareable `content://` URIs (backed by `FileProvider` with proper `.jpg`/`.mp4` file extensions
-     * and MIME types, directly from `Download/PulseGrab/<folderName>`) so Telegram's `ACTION_SEND` / `ACTION_SEND_MULTIPLE`
-     * handler always receives the media files with full read permission and never fails with Permission Denial or FileUriExposedException.
-     */
+    /** Resolve only complete, readable files on IO. Never mutate task status while preparing a share. */
     suspend fun prepareGalleryMediaUrisForFolder(
         folderName: String,
         specificTaskIds: Set<String>? = null
-    ): List<Uri> {
-        // First ensure any stray DCIM files or orphaned Download/PulseGrab files are consolidated
+    ): List<Uri> = withContext(Dispatchers.IO) {
         val safeFolder = com.example.domain.model.DownloadFolderConfig.sanitizeFolderName(folderName)
-        val allTasks = downloadDao.getAllTasksOnce()
-        val folderTasks = allTasks.filter {
-            (specificTaskIds == null || it.id in specificTaskIds) &&
-                (it.folderName.equals(folderName, ignoreCase = true) ||
-                    com.example.domain.model.DownloadFolderConfig.sanitizeFolderName(it.folderName)
+        downloadDao.getAllTasksOnce().asSequence().filter { task ->
+            task.status == DownloadStatus.COMPLETED.name &&
+                (specificTaskIds == null || task.id in specificTaskIds) &&
+                (task.folderName.equals(folderName, ignoreCase = true) ||
+                    com.example.domain.model.DownloadFolderConfig.sanitizeFolderName(task.folderName)
                         .equals(safeFolder, ignoreCase = true))
-        }.sortedBy { it.createdAt }
-
-        val resultUris = ArrayList<Uri>()
-        val addedNames = HashSet<String>()
-
-        for (task in folderTasks) {
-            val resolvedUri = resolveShareableContentUriForTask(task, safeFolder)
-            if (resolvedUri != null) {
-                resultUris.add(resolvedUri)
-                addedNames.add(task.fileName.lowercase(Locale.US))
-                // If the task wasn't marked COMPLETED yet even though its file is right there on disk, heal it
-                if (task.status != DownloadStatus.COMPLETED.name) {
-                    val size = getUriOrFileSize(resolvedUri, safeFolder, task.fileName).takeIf { it > 0L } ?: 1024L
-                    downloadDao.markCompleted(
-                        id = task.id,
-                        status = DownloadStatus.COMPLETED.name,
-                        downloadedBytes = size,
-                        totalBytes = size,
-                        localUri = resolvedUri.toString(),
-                        completedAt = System.currentTimeMillis()
-                    )
-                }
-            }
-        }
-
-        // Also check the physical Download/PulseGrab/<safeFolder> directory in case files exist on disk
-        if (specificTaskIds == null) {
-            val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            for (candidate in listOf(safeFolder, folderName.trim()).distinct()) {
-                val dir = File(publicDownloads, "PulseGrab/$candidate")
-                if (dir.exists() && dir.isDirectory) {
-                    dir.listFiles()
-                        ?.filter { it.isFile && it.length() > 0L && !it.name.endsWith(".part") }
-                        ?.sortedBy { it.lastModified() }
-                        ?.forEach { file ->
-                            if (addedNames.add(file.name.lowercase(Locale.US))) {
-                                val isVideo = file.name.endsWith(".mp4", ignoreCase = true) ||
-                                    file.name.endsWith(".webm", ignoreCase = true) ||
-                                    file.name.endsWith(".mov", ignoreCase = true)
-                                scanDownloadFileInPlace(
-                                    safeSubfolder = candidate,
-                                    fileName = file.name,
-                                    resolvedMime = if (isVideo) "video/mp4" else "image/jpeg"
-                                )
-                                resultUris.add(toShareableFileProviderUri(file))
-                            }
-                        }
-                }
-            }
-        }
-
-        return resultUris
+        }.sortedBy { it.createdAt }.mapNotNull { task ->
+            resolveShareableContentUriForTask(task, safeFolder)
+        }.distinct().toList()
     }
 
-    private fun resolveShareableContentUriForTask(
-        task: DownloadTaskEntity,
-        safeFolder: String
-    ): Uri? {
-        val fileName = task.fileName
-        val candidateFolders = listOf(safeFolder, task.folderName.trim()).distinct()
-        val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-
-        // 1. Direct physical file in Download/PulseGrab/<folder>/<fileName> -> serve via FileProvider (zero copy, has .jpg/.mp4 extension!)
-        for (folder in candidateFolders) {
-            val publicFile = File(publicDownloads, "PulseGrab/$folder/$fileName")
-            if (publicFile.exists() && publicFile.length() > 0L && publicFile.canRead()) {
-                scanDownloadFileInPlace(folder, fileName, task.mimeType)
-                return toShareableFileProviderUri(publicFile)
-            }
-            val appDownloads = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-            if (appDownloads != null) {
-                val appFile = File(appDownloads, "PulseGrab/$folder/$fileName")
-                if (appFile.exists() && appFile.length() > 0L && appFile.canRead()) {
-                    return toShareableFileProviderUri(appFile)
-                }
-            }
-            val internalFile = File(context.filesDir, "downloads/PulseGrab/$folder/$fileName")
-            if (internalFile.exists() && internalFile.length() > 0L && internalFile.canRead()) {
-                return toShareableFileProviderUri(internalFile)
-            }
-        }
-
-        // 2. Check task.localUri or MediaStore.Downloads URI
-        val candidateUris = ArrayList<Uri>()
-        if (!task.localUri.isNullOrBlank()) {
-            runCatching { Uri.parse(task.localUri) }.getOrNull()?.let { candidateUris.add(it) }
-        }
-        findExistingFileInDownloadFolderUri(safeFolder, fileName)?.let { candidateUris.add(it) }
-
-        for (uri in candidateUris.distinct()) {
-            if (uri.scheme == "file") {
-                val f = uri.path?.let { File(it) }
-                if (f != null && f.exists() && f.length() > 0L) {
-                    return toShareableFileProviderUri(f)
-                }
-            } else if (uri.scheme == "content") {
-                if (uri.authority == "${context.packageName}.fileprovider") {
-                    return uri
-                }
-                // Stage content://media/.../downloads/ID into a FileProvider-backed file with its exact .jpg/.mp4 filename
-                // so Telegram receives a URI with a clean filename extension and guaranteed FileProvider read grant
-                val shareCacheDir = File(context.cacheDir, "telegram_share/$safeFolder").apply { mkdirs() }
-                val stagedFile = File(shareCacheDir, fileName)
-                val stagedOk = runCatching {
-                    if (stagedFile.exists() && stagedFile.length() > 0L) {
-                        true
-                    } else {
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            FileOutputStream(stagedFile).use { output ->
-                                input.copyTo(output, bufferSize = 16 * 1024)
-                            }
-                            true
-                        } ?: false
-                    }
-                }.getOrDefault(false)
-                if (stagedOk && stagedFile.exists() && stagedFile.length() > 0L) {
-                    return toShareableFileProviderUri(stagedFile)
-                }
-                if (isContentUriReadable(uri)) {
-                    return uri
+    private fun resolveShareableContentUriForTask(task: DownloadTaskEntity, safeFolder: String): Uri? {
+        // Prefer the recorded URI, including SAF folders. No stale cache copies or folder-wide substitution.
+        task.localUri?.let { stored ->
+            val uri = runCatching { Uri.parse(stored) }.getOrNull()
+            if (uri?.scheme == "content" && isContentUriReadable(uri)) return uri
+            if (uri?.scheme == "file") {
+                val file = uri.path?.let { File(it) }
+                if (file != null && file.isFile && file.length() > 0 && file.canRead()) {
+                    return runCatching { toShareableFileProviderUri(file) }.getOrNull()
                 }
             }
         }
-        return null
+        return findExistingFileInDownloadFolderUri(safeFolder, task.fileName)?.takeIf { uri ->
+            uri.scheme == "content" && isContentUriReadable(uri)
+        }
     }
 
     /**

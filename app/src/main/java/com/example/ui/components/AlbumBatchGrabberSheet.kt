@@ -63,13 +63,7 @@ import com.example.domain.model.AlbumScrapeStatus
 import com.example.domain.model.DownloadedAlbumRecord
 import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.CoralError
-import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.GlassBorderSubtle
-import com.example.ui.theme.MidnightSurface
-import com.example.ui.theme.MidnightSurfaceElevated
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.VividViolet
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -101,7 +95,7 @@ fun AlbumBatchGrabberSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MidnightSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier.testTag("album_batch_grabber_sheet")
     ) {
         Column(
@@ -118,26 +112,26 @@ fun AlbumBatchGrabberSheet(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(ElectricCyan.copy(alpha = 0.16f)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.CollectionsBookmark,
                         contentDescription = null,
-                        tint = ElectricCyan,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Album Folder Auto-Grabber",
+                        text = "Album grabber",
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
                         text = "Scans each album, skips already-downloaded albums & saves all pictures + videos together into one single Download/PulseGrab/<Album_Title> folder",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -161,7 +155,7 @@ fun AlbumBatchGrabberSheet(
                         Icon(
                             imageVector = Icons.Default.ContentPaste,
                             contentDescription = "Paste Album Folder URL",
-                            tint = ElectricCyan
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -219,7 +213,7 @@ fun AlbumBatchGrabberSheet(
                             Text(
                                 text = "Checks disk: if files exist, checks and skips; if deleted or missing, re-downloads",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (redownloadIfMissing) EmeraldSuccess else TextSecondary
+                                color = if (redownloadIfMissing) EmeraldSuccess else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
@@ -243,7 +237,7 @@ fun AlbumBatchGrabberSheet(
                             Text(
                                 text = "Excludes /thumb/ links, extracts <h1> title, data-src/data-full & /uploads/ CDN links",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
@@ -277,7 +271,7 @@ fun AlbumBatchGrabberSheet(
                 } else {
                     Button(
                         onClick = onStartAlbumBatch,
-                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .weight(1f)
@@ -291,7 +285,7 @@ fun AlbumBatchGrabberSheet(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Scan & Auto-Download New Albums",
+                            text = "Collect albums",
                             color = Color.Black,
                             style = MaterialTheme.typography.labelLarge
                         )
@@ -313,26 +307,26 @@ fun AlbumBatchGrabberSheet(
             OutlinedButton(
                 onClick = { onOpenUrlInBrowserForCookies(albumFolderUrl) },
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, GlassBorderSubtle),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("warm_session_in_browser_button")
             ) {
                 Text(
-                    text = "🛡 Anti-403: Open URL in In-App Browser to Sync Site Cookies",
+                    text = "🛡 Open source in browser",
                     style = MaterialTheme.typography.labelMedium,
-                    color = ElectricCyan
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
             // Live Batch Telemetry & Per-Album Log
             if (batchProgress.isScanning || batchProgress.albumsProcessed > 0 || batchProgress.errorMessage != null) {
                 Surface(
-                    color = MidnightSurfaceElevated,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(
                         1.dp,
-                        if (batchProgress.isScanning) ElectricCyan else EmeraldSuccess.copy(alpha = 0.6f)
+                        if (batchProgress.isScanning) MaterialTheme.colorScheme.primary else EmeraldSuccess.copy(alpha = 0.6f)
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -348,7 +342,7 @@ fun AlbumBatchGrabberSheet(
                             Text(
                                 text = batchProgress.currentAlbumTitle.ifBlank { "Scanning…" },
                                 style = MaterialTheme.typography.titleSmall,
-                                color = if (batchProgress.isScanning) ElectricCyan else EmeraldSuccess,
+                                color = if (batchProgress.isScanning) MaterialTheme.colorScheme.primary else EmeraldSuccess,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f)
@@ -356,7 +350,7 @@ fun AlbumBatchGrabberSheet(
                             Text(
                                 text = "${batchProgress.albumsProcessed}/${batchProgress.totalAlbumsFound} albums",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
@@ -364,8 +358,8 @@ fun AlbumBatchGrabberSheet(
                             val frac = (batchProgress.albumsProcessed.toFloat() / batchProgress.totalAlbumsFound.toFloat()).coerceIn(0f, 1f)
                             LinearProgressIndicator(
                                 progress = { frac },
-                                color = ElectricCyan,
-                                trackColor = GlassBorderSubtle,
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.outlineVariant,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(5.dp)
@@ -392,7 +386,7 @@ fun AlbumBatchGrabberSheet(
                             Text(
                                 text = "Files Queued: ${batchProgress.totalMediaQueued}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = ElectricCyan
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -412,14 +406,14 @@ fun AlbumBatchGrabberSheet(
                                     val badgeColor = when (log.status) {
                                         AlbumScrapeStatus.NEW_DOWNLOADED -> EmeraldSuccess
                                         AlbumScrapeStatus.SKIPPED_ALREADY_DOWNLOADED -> AmberWarning
-                                        AlbumScrapeStatus.NO_MEDIA_FOUND -> TextSecondary
+                                        AlbumScrapeStatus.NO_MEDIA_FOUND -> MaterialTheme.colorScheme.onSurfaceVariant
                                         AlbumScrapeStatus.ERROR -> CoralError
                                     }
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(8.dp))
-                                            .background(MidnightSurface.copy(alpha = 0.7f))
+                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
                                             .padding(horizontal = 10.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
@@ -438,7 +432,7 @@ fun AlbumBatchGrabberSheet(
                                             Text(
                                                 text = log.albumTitle,
                                                 style = MaterialTheme.typography.labelMedium,
-                                                color = TextPrimary,
+                                                color = MaterialTheme.colorScheme.onSurface,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -474,7 +468,7 @@ fun AlbumBatchGrabberSheet(
                             onClick = onVerifyAndRedownloadMissingAlbums,
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            Text("Verify on Disk", style = MaterialTheme.typography.labelSmall, color = ElectricCyan)
+                            Text("Verify on Disk", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                         }
                         TextButton(
                             onClick = onClearAlbumHistory,
@@ -528,7 +522,7 @@ fun AlbumBatchGrabberSheet(
                                     Text(
                                         text = "🔗 ${album.albumUrl}",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = ElectricCyan,
+                                        color = MaterialTheme.colorScheme.primary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -543,7 +537,7 @@ fun AlbumBatchGrabberSheet(
                                     Icon(
                                         imageVector = Icons.Default.ContentCopy,
                                         contentDescription = "Copy album link",
-                                        tint = ElectricCyan,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -565,7 +559,7 @@ fun AlbumBatchGrabberSheet(
                                     Icon(
                                         imageVector = Icons.Default.DeleteOutline,
                                         contentDescription = "Remove from history",
-                                        tint = TextSecondary,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(17.dp)
                                     )
                                 }

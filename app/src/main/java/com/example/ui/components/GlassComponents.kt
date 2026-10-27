@@ -1,7 +1,7 @@
 package com.example.ui.components
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -18,24 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.EmeraldSuccess
-import com.example.ui.theme.GlassBorderLight
-import com.example.ui.theme.GlassBorderSubtle
-import com.example.ui.theme.GlassSurfaceElevated
-import com.example.ui.theme.GlassSurfaceWhite
-import com.example.ui.theme.MidnightBg
-import com.example.ui.theme.VividViolet
 
 /**
- * Ambient Aurora Mesh background that gives translucent Glass surfaces
- * subtle cyan, violet, and emerald light refraction without visual clutter.
+ * Quiet, theme-aware background shared by the main screens.
  */
 @Composable
 fun GlassBackground(
@@ -45,59 +36,14 @@ fun GlassBackground(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MidnightBg)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            // Top-right Electric Cyan ambient glow
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        ElectricCyan.copy(alpha = 0.14f),
-                        ElectricCyan.copy(alpha = 0.03f),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.88f, size.height * 0.08f),
-                    radius = size.width * 0.65f
-                ),
-                radius = size.width * 0.65f,
-                center = Offset(size.width * 0.88f, size.height * 0.08f)
-            )
-
-            // Center-left Vivid Violet ambient glow
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        VividViolet.copy(alpha = 0.13f),
-                        VividViolet.copy(alpha = 0.03f),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.12f, size.height * 0.36f),
-                    radius = size.width * 0.7f
-                ),
-                radius = size.width * 0.7f,
-                center = Offset(size.width * 0.12f, size.height * 0.36f)
-            )
-
-            // Bottom-right subtle Emerald/Cyan glow
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        EmeraldSuccess.copy(alpha = 0.09f),
-                        Color.Transparent
-                    ),
-                    center = Offset(size.width * 0.82f, size.height * 0.86f),
-                    radius = size.width * 0.55f
-                ),
-                radius = size.width * 0.55f,
-                center = Offset(size.width * 0.82f, size.height * 0.86f)
-            )
-        }
         content()
     }
 }
 
 /**
- * Translucent Frosted Glass Card with directional specular border highlight.
+ * Theme-aware surface card with a restrained optional accent border.
  */
 @Composable
 fun GlassCard(
@@ -108,40 +54,13 @@ fun GlassCard(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val fillBrush = Brush.verticalGradient(
-        colors = if (elevated) {
-            listOf(
-                Color.White.copy(alpha = 0.13f),
-                Color.White.copy(alpha = 0.06f)
-            )
-        } else {
-            listOf(
-                Color.White.copy(alpha = 0.09f),
-                Color.White.copy(alpha = 0.04f)
-            )
-        }
-    )
-
-    val borderBrush = Brush.linearGradient(
-        colors = if (accentColor != null) {
-            listOf(
-                accentColor.copy(alpha = 0.55f),
-                GlassBorderLight,
-                accentColor.copy(alpha = 0.18f)
-            )
-        } else {
-            listOf(
-                GlassBorderLight,
-                GlassBorderSubtle,
-                Color.White.copy(alpha = 0.04f)
-            )
-        }
-    )
+    val fillColor = if (elevated) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface
+    val borderColor = accentColor?.copy(alpha = 0.22f) ?: MaterialTheme.colorScheme.outlineVariant
 
     val baseModifier = modifier
         .clip(shape)
-        .background(brush = fillBrush, shape = shape)
-        .border(width = 1.dp, brush = borderBrush, shape = shape)
+        .background(color = fillColor, shape = shape)
+        .border(width = 1.dp, color = borderColor, shape = shape)
         .let { mod ->
             if (onClick != null) mod.clickable(onClick = onClick) else mod
         }
@@ -159,7 +78,7 @@ fun GlassCard(
 fun GlassPill(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
-    accentColor: Color = ElectricCyan,
+    accentColor: Color = MaterialTheme.colorScheme.primary,
     shape: Shape = RoundedCornerShape(50),
     contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
     onClick: (() -> Unit)? = null,
@@ -168,7 +87,7 @@ fun GlassPill(
     val containerColor = if (selected) {
         accentColor.copy(alpha = 0.20f)
     } else {
-        GlassSurfaceWhite
+        MaterialTheme.colorScheme.surfaceContainer
     }
 
     val borderStroke = BorderStroke(
@@ -177,7 +96,7 @@ fun GlassPill(
             colors = if (selected) {
                 listOf(accentColor.copy(alpha = 0.85f), accentColor.copy(alpha = 0.35f))
             } else {
-                listOf(GlassBorderLight, GlassBorderSubtle)
+                listOf(MaterialTheme.colorScheme.outlineVariant, MaterialTheme.colorScheme.outlineVariant)
             }
         )
     )
@@ -188,6 +107,7 @@ fun GlassPill(
         border = borderStroke,
         modifier = modifier
             .clip(shape)
+            .then(if (onClick != null) Modifier.heightIn(min = 48.dp) else Modifier)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
     ) {
         Row(
@@ -200,7 +120,7 @@ fun GlassPill(
 
 
 /**
- * Translucent Glass Top Header Surface with subtle bottom specular divider.
+ * Theme-aware header with a subtle divider.
  */
 @Composable
 fun GlassHeaderSurface(
@@ -210,17 +130,10 @@ fun GlassHeaderSurface(
 ) {
     Box(
         modifier = modifier
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF111A2E).copy(alpha = 0.88f),
-                        Color(0xFF0B1120).copy(alpha = 0.78f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surface)
             .border(
                 width = Dp.Hairline,
-                color = GlassBorderLight
+                color = MaterialTheme.colorScheme.outlineVariant
             ),
         content = content
     )

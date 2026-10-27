@@ -31,6 +31,8 @@ import com.example.domain.usecase.UrlMediaUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -52,7 +54,7 @@ enum class ExtensionChipPreset {
 
 data class InternalControlState(
     val currentDestination: AppDestination = AppDestination.HOME,
-    val urlInput: String = "https://commons.wikimedia.org/wiki/Commons:Featured_pictures",
+    val urlInput: String = "",
     val activeBrowserUrl: String = "pulsegrab://showcase",
     val isBrowserOpen: Boolean = false,
     val isPageLoading: Boolean = false,
@@ -71,7 +73,7 @@ data class InternalControlState(
     val isFolderSheetOpen: Boolean = false,
     val isCrawlerSheetOpen: Boolean = false,
     val isAlbumBatchSheetOpen: Boolean = false,
-    val albumFolderUrlInput: String = "https://showcase.pulsegrab.local/gallery/page-1",
+    val albumFolderUrlInput: String = "",
     val strictJpgMp4Only: Boolean = true,
     val skipAlreadyDownloadedAlbums: Boolean = true,
     val redownloadIfMissing: Boolean = true,
@@ -79,17 +81,12 @@ data class InternalControlState(
     val crawlerDepth: Int = 2,
     val crawlerMaxPages: Int = 30,
     val crawlerSameDomain: Boolean = true,
-    val deepScanConfig: DeepScanConfig = DeepScanConfig(
-        seedUrl = "https://showcase.pulsegrab.local/gallery/page-1",
-        mode = DeepScanMode.DOMAIN_BFS,
-        maxDepth = 2,
-        maxPages = 25,
-        sameDomainOnly = true,
-        urlPattern = "https://showcase.pulsegrab.local/gallery/page-[1-3]"
-    ),
+    val deepScanConfig: DeepScanConfig = DeepScanConfig(),
     val downloadFilterStatus: DownloadStatus? = null,
     val downloadSearchQuery: String = "",
     val telegramShareFolderName: String? = null,
+    val isPreparingTelegramShare: Boolean = false,
+    val telegramShareMessage: String? = null,
     val isLogDialogOpen: Boolean = false,
     val logDialogFilterUrl: String? = null,
     val collapsedFolderNames: Set<String> = emptySet(),
@@ -143,6 +140,8 @@ data class MainUiState(
     val downloadFilterStatus: DownloadStatus? = null,
     val downloadSearchQuery: String = "",
     val telegramShareFolderName: String? = null,
+    val isPreparingTelegramShare: Boolean = false,
+    val telegramShareMessage: String? = null,
     val activeDownloadCount: Int = 0,
     val totalDownloadSpeed: Long = 0L,
     val isLogDialogOpen: Boolean = false,
@@ -155,7 +154,7 @@ data class MainUiState(
 private val defaultPortals = listOf(
     PortalShortcut(
         id = "showcase",
-        title = "PulseGrab Multi-Format Hub",
+        title = "Demo gallery",
         subtitle = "Instant test gallery with JPG, PNG, WEBP, SVG, MP4 & multi-page links",
         url = "pulsegrab://showcase",
         badge = "BUILT-IN",
@@ -189,12 +188,16 @@ private val defaultPortals = listOf(
 
 class MainDownloaderViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val preferences = com.example.data.local.DownloaderPreferences(application)
     private val database = PulseGrabDatabase.getInstance(application)
     private val downloadRepository = DownloadRepository(application, database.downloadDao())
     private val filterMediaUseCase = FilterAndDeduplicateMediaUseCase()
     private val expandUrlPatternUseCase = ExpandUrlPatternUseCase()
 
-    private val controlState = MutableStateFlow(InternalControlState())
+    private val controlState = MutableStateFlow(InternalControlState(
+        folderConfig = preferences.folderConfig(), extensionConfig = preferences.extensions(),
+        skipDuplicates = preferences.skipDuplicates
+    ))
 
     val webMediaScannerEngine = WebMediaScannerEngine { newItems ->
         appendDiscoveredMedia(newItems)
@@ -219,20 +222,22 @@ class MainDownloaderViewModel(application: Application) : AndroidViewModel(appli
     )
 
     init {
+        downloadRepository.activeFolderConfig = controlState.value.folderConfig
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            controlState.map { Triple(it.folderConfig, it.extensionConfig, it.skipDuplicates) }
+                .distinctUntilChanged().collect { (folder, extensions, skip) ->
+                    preferences.saveFolder(folder)
+                    preferences.saveExtensions(extensions)
+                    preferences.skipDuplicates = skip
+                    downloadRepository.activeFolderConfig = folder
+                }
+        }
         // Connect DomainCrawlerController callback to stream discovered media
         DomainCrawlerController.onMediaDiscoveredCallback = { newItems ->
             appendDiscoveredMedia(newItems)
         }
 
-        // Seed initial detected items from showcase
-        val initialShowcaseHtml = WebMediaScannerEngine.buildShowcaseHtml(1)
-        val initialItems = DeepScanEngine.extractMediaFromHtml(
-            html = initialShowcaseHtml,
-            baseUrl = "https://showcase.pulsegrab.local/gallery/page-1",
-            crawlDepth = 0,
-            extensionFilterConfig = ExtensionFilterConfig()
-        )
-        appendDiscoveredMedia(initialItems)
+
     }
 
     private data class CoreCombined(
@@ -409,6 +414,8 @@ class MainDownloaderViewModel(application: Application) : AndroidViewModel(appli
             downloadFilterStatus = ctrl.downloadFilterStatus,
             downloadSearchQuery = ctrl.downloadSearchQuery,
             telegramShareFolderName = ctrl.telegramShareFolderName,
+            isPreparingTelegramShare = ctrl.isPreparingTelegramShare,
+            telegramShareMessage = ctrl.telegramShareMessage,
             activeDownloadCount = activeDownloads,
             totalDownloadSpeed = totalSpeed,
             isLogDialogOpen = ctrl.isLogDialogOpen,
@@ -436,11 +443,11 @@ class MainDownloaderViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun openTelegramShareSheet(folderName: String) {
-        controlState.update { it.copy(telegramShareFolderName = folderName) }
+        controlState.update { it.copy(telegramShareFolderName = folderName, telegramShareMessage = null) }
     }
 
     fun closeTelegramShareSheet() {
-        controlState.update { it.copy(telegramShareFolderName = null) }
+        controlState.update { it.copy(telegramShareFolderName = null, telegramShareMessage = null) }
     }
 
     fun toggleFolderCollapsed(folderName: String) {
@@ -1008,34 +1015,39 @@ class MainDownloaderViewModel(application: Application) : AndroidViewModel(appli
         caption: String,
         preferTelegramDirect: Boolean = true
     ) {
+        if (controlState.value.isPreparingTelegramShare) return
+        val completed = tasksToShare.filter { it.status == DownloadStatus.COMPLETED }.distinctBy { it.id }
+        if (completed.isEmpty()) {
+            controlState.update { it.copy(telegramShareMessage = "No completed files selected. Finish or retry downloads first.") }
+            return
+        }
+        controlState.update { it.copy(isPreparingTelegramShare = true, telegramShareMessage = null) }
         viewModelScope.launch {
-            val targetIds = tasksToShare.map { it.id }.toSet().takeIf { it.isNotEmpty() }
-            // Resolve FileProvider-backed content:// URIs with proper .jpg/.mp4 extensions directly from Download/PulseGrab/<folderName>
-            var uris = downloadRepository.prepareGalleryMediaUrisForFolder(
-                folderName = folderName,
-                specificTaskIds = targetIds
-            )
-            if (uris.isEmpty() && targetIds != null) {
-                uris = downloadRepository.prepareGalleryMediaUrisForFolder(
+            try {
+                val uris = downloadRepository.prepareGalleryMediaUrisForFolder(
                     folderName = folderName,
-                    specificTaskIds = null
+                    specificTaskIds = completed.map { it.id }.toSet()
                 )
+                // Do not substitute an entire folder for a missing part or silently send fewer files.
+                if (uris.size != completed.size) {
+                    controlState.update { it.copy(telegramShareMessage =
+                        "Found ${uris.size} of ${completed.size} files. Re-download missing files before sharing this part.") }
+                    return@launch
+                }
+                com.example.ui.components.TelegramMediaShareHelper.shareMediaUrisToTelegram(
+                    context = context, uris = uris,
+                    hasImages = completed.any { it.mediaType == MediaType.IMAGE },
+                    hasVideos = completed.any { it.mediaType == MediaType.VIDEO },
+                    caption = caption, preferTelegramDirect = preferTelegramDirect,
+                    onMessage = { message -> controlState.update { it.copy(telegramShareMessage = message) } }
+                )
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                controlState.update { it.copy(telegramShareMessage = "Could not prepare files: ${error.localizedMessage ?: "storage unavailable"}") }
+            } finally {
+                controlState.update { it.copy(isPreparingTelegramShare = false) }
             }
-
-            val hasImages = tasksToShare.any { it.mediaType == MediaType.IMAGE } ||
-                uris.any { !it.toString().endsWith(".mp4", ignoreCase = true) }
-            val hasVideos = tasksToShare.any { it.mediaType == MediaType.VIDEO } ||
-                uris.any { it.toString().endsWith(".mp4", ignoreCase = true) }
-
-            com.example.ui.components.TelegramMediaShareHelper.shareMediaUrisToTelegram(
-                context = context,
-                uris = uris,
-                hasImages = hasImages,
-                hasVideos = hasVideos,
-                caption = caption,
-                preferTelegramDirect = preferTelegramDirect,
-                onMessage = { msg -> showSnackbar(msg) }
-            )
         }
     }
 
@@ -1214,4 +1226,10 @@ class MainDownloaderViewModel(application: Application) : AndroidViewModel(appli
             current.copy(rawDetectedItems = map.values.toList())
         }
     }
+    override fun onCleared() {
+        downloadRepository.close()
+        DomainCrawlerController.onMediaDiscoveredCallback = null
+        super.onCleared()
+    }
+
 }

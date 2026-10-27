@@ -27,7 +27,8 @@ data class DownloadTaskEntity(
     val tempFilePath: String? = null,
     val errorMessage: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val completedAt: Long? = null
+    val completedAt: Long? = null,
+    val destinationTreeUri: String? = null
 ) {
     fun toDomain(): DownloadTask {
         return DownloadTask(

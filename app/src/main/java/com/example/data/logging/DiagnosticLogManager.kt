@@ -135,7 +135,7 @@ object DiagnosticLogManager {
         append("=== PulseGrab Diagnostic Logs Export ===\n")
         append("Exported: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}\n")
         append("Total Entries: ${logDeque.size}\n\n")
-        logDeque.reversed().forEach { append(it.toFormattedText()).append("\n") }
+        logDeque.toList().asReversed().forEach { append(it.toFormattedText()).append("\n") }
     }
 
     fun shareLogs(context: Context) {

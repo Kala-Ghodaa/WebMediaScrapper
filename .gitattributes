@@ -1,0 +1,3 @@
+# Store wrapper scripts as normalized text; check out each platform's expected line endings.
+gradlew text eol=lf
+gradlew.bat text eol=crlf
